@@ -1,1 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - VL Online Shop</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 2rem;
+    }
 
+    h1 {
+      text-align: center;
+      color: #003366;
+    }
+
+    .checkout-form {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 0.7rem 1.5rem;
+      background-color: #0059b3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background-color: #003366;
+    }
+
+    .order-summary {
+      background: #f0f4f8;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Checkout</h1>
+  <div class="checkout-form">
+    <div class="order-summary" id="order-summary"></div>
+
+    <div class="form-group">
+      <label for="address">Alamat Pengiriman *</label>
+      <textarea id="address" rows="3" placeholder="Tulis alamat lengkap dan patokannya" required></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="phone">No. HP / WhatsApp *</label>
+      <input type="tel" id="phone" placeholder="Contoh: 08123456789" required>
+    </div>
+
+    <div class="form-group">
+      <label for="voucher">Kode Voucher</label>
+      <input type="text" id="voucher" placeholder="(Opsional)">
+    </div>
+
+    <div class="form-group">
+      <label for="method">Metode Pembayaran *</label>
+      <select id="method" required>
+        <option value="">-- Pilih Metode --</option>
+        <option value="bca">Transfer Bank BCA</option>
+        <option value="qris">QRIS</option>
+        <option value="cod">COD</option>
+      </select>
+    </div>
+
+    <button onclick="processCheckout()">Selesaikan Pembayaran</button>
+  </div>
+
+  <script>
+    const cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
+    const savedAddress = localStorage.getItem('vl_address') || '';
+    const savedPhone = localStorage.getItem('vl_phone') || '';
+
+    document.getElementById('address').value = savedAddress;
+    document.getElementById('phone').value = savedPhone;
+
+    function calculateTotal() {
+      return Object.values(cart).reduce((sum, item) => sum + item.price * item.qty, 0);
+    }
+
+    function displayOrderSummary() {
+      const summary = document.getElementById('order-summary');
+      let html = '<h3>Rincian Pesanan</h3><ul>';
+      Object.values(cart).forEach(item => {
+        html += `<li>${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}</li>`;
+      });
+      const total = calculateTotal();
+      html += `</ul><p><strong>Total Belanja:</strong> Rp${total.toLocaleString()}</p>`;
+      summary.innerHTML = html;
+    }
+
+    function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function getShippingCost(distance) {
+      return 5000 + Math.floor(distance / 1000) * 2000;
+    }
+
+    function processCheckout() {
+      const address = document.getElementById('address').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const method = document.getElementById('method').value;
+
+      if (!address || !phone || !method) {
+        alert('Harap lengkapi semua formulir.');
+        return;
+      }
+
+      localStorage.setItem('vl_address', address);
+      localStorage.setItem('vl_phone', phone);
+
+      const total = calculateTotal();
+      if (method === 'cod' && total > 100000) {
+        alert('COD tidak tersedia untuk total belanja di atas Rp100.000. Silakan pilih metode lain.');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(pos => {
+        const userLat = pos.coords.latitude;
+        const userLon = pos.coords.longitude;
+        const storeLat = -1.6409491;
+        const storeLon = 105.771176;
+
+        const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
+        const shippingCost = getShippingCost(distance);
+
+        let message = 'Rincian Pesanan:\n';
+        Object.values(cart).forEach(item => {
+          message += `${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
+        });
+        message += `Total Belanja: Rp${total.toLocaleString()}\n`;
+        message += `Ongkir: Rp${shippingCost.toLocaleString()}\n`;
+        message += `Alamat: ${address}\nNo HP: ${phone}\nMetode: ${method.toUpperCase()}`;
+
+        if (confirm('Lanjut ke halaman konfirmasi?')) {
+          alert('Silakan screenshot halaman ini.');
+          window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
+        }
+      }, err => {
+        alert('Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.');
+      });
+    }
+
+    displayOrderSummary();
+  </script>
+</body>
+</html>
