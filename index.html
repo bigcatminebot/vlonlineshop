@@ -257,7 +257,7 @@
         category: 'Pakaian',
         price: 75000,
         description: 'Celana jeans pria model terbaru.',
-        image: 'https://via.placeholder.com/200x150?text=Celana+Jeans'
+        image: 'https://down-id.img.susercontent.com/file/id-11134207-7qul8-lgd43ij3wejs61'
       },
       {
         id: 3,
@@ -266,7 +266,7 @@
         bestSeller: true,
         price: 90000,
         description: 'Kemeja flanel dengan bahan lembut.',
-        image: 'https://via.placeholder.com/200x150?text=Kemeja+Flanel',
+        image: 'https://down-id.img.susercontent.com/file/id-11134207-7qul8-lgd43ij3wejs61',
         link: 'https://tokopedia.com/produk2'
       }
     ];
@@ -286,6 +286,7 @@
           <p>${p.description}</p>
           <p><strong>Rp${p.price.toLocaleString()}</strong></p>
           <div class="buttons">
+           <button onclick="addToCart(${p.id})">Tambah</button>
             ${p.link ? `<a href="${p.link}" class="beli" target="_blank">Beli Sekarang</a>` : ''}
           </div>
         `;
