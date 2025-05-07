@@ -53,8 +53,13 @@
       font-size: 1rem;
     }
 
-    button:hover {
+    button:hover:enabled {
       background-color: #003366;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
     }
 
     .order-summary {
@@ -67,6 +72,35 @@
     .alert {
       color: red;
       font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    #loading-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 6px solid #ccc;
+      border-top-color: #0059b3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .manual-shipping {
       margin-top: 1rem;
     }
   </style>
@@ -102,7 +136,18 @@
       </select>
     </div>
 
-    <button onclick="processCheckout()">Selesaikan Pembayaran</button>
+    <div class="manual-shipping">
+      <button onclick="manualGetLocation()">Hitung Ongkir</button>
+    </div>
+
+    <div style="margin-top:1rem">
+      <button id="checkout-btn" onclick="processCheckout()" disabled>Selesaikan Pembayaran</button>
+    </div>
+  </div>
+
+  <div id="loading-overlay" style="display:none;">
+    <div class="spinner"></div>
+    <p>Memproses pembayaran...</p>
   </div>
 
   <script>
@@ -112,6 +157,12 @@
 
     document.getElementById('address').value = savedAddress;
     document.getElementById('phone').value = savedPhone;
+
+    let latestDistance = null;
+    let latestShippingDiscount = 0;
+    let latestVoucher = '';
+    const storeLat = -1.6409491;
+    const storeLon = 105.771176;
 
     function calculateTotal() {
       return Object.values(cart).reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -142,21 +193,71 @@
       }
     }
 
+    function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function getShippingCost(distance) {
+      if (distance <= 1000) return 5000;
+      return 5000 + Math.ceil((distance - 1000) / 1000) * 2000;
+    }
+
+    function showLoading() {
+      document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    function enableCheckout() {
+      document.getElementById('checkout-btn').disabled = false;
+    }
+
+    function manualGetLocation() {
+      showLoading();
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          latestDistance = getDistanceFromLatLonInMeters(storeLat, storeLon, pos.coords.latitude, pos.coords.longitude);
+          enableCheckout();
+          alert('✅ Lokasi berhasil didapat! Anda bisa melanjutkan pembayaran.');
+          hideLoading();
+        }, err => {
+          hideLoading();
+          alert('❌ Gagal mendapatkan lokasi. Aktifkan GPS dan coba lagi.');
+        });
+      } else {
+        hideLoading();
+        alert('❌ Browser Anda tidak mendukung GPS.');
+      }
+    }
+
     function processCheckout() {
       const address = document.getElementById('address').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const method = document.getElementById('method').value;
       const voucherCode = document.getElementById('voucher').value.trim();
+      const total = calculateTotal();
 
       if (!address || !phone || !method) {
         alert('Harap lengkapi semua kolom wajib.');
         return;
       }
 
+      if (!latestDistance) {
+        alert('⚠️ Silakan tekan tombol "Hitung Ongkir" terlebih dahulu.');
+        return;
+      }
+
       localStorage.setItem('vl_address', address);
       localStorage.setItem('vl_phone', phone);
-
-      const total = calculateTotal();
 
       if (method === 'cod' && total > 100000) {
         alert('COD tidak tersedia untuk total belanja di atas Rp100.000. Silakan pilih metode lain.');
@@ -177,63 +278,12 @@
         document.getElementById('voucher-message').textContent = '';
       }
 
-      const storeLat = -1.6409491;
-      const storeLon = 105.771176;
+      const baseShippingCost = getShippingCost(latestDistance);
+      const finalShippingCost = Math.max(0, baseShippingCost - shippingDiscount);
 
-      function continueCheckoutWithShipping(distanceMeters = 10000) {
-        const baseShippingCost = getShippingCost(distanceMeters);
-        const finalShippingCost = Math.max(0, baseShippingCost - shippingDiscount);
-
-        let message = '🛒 Rincian Pesanan:\n';
-        Object.values(cart).forEach(item => {
-          message += `📦 ${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
-        });
-        message += `💸 Total Belanja: Rp${total.toLocaleString()}\n`;
-        message += `🚚 Ongkir: Rp${finalShippingCost.toLocaleString()}\n`;
-        if (voucherCode !== '') {
-          message += `🎟️ Voucher: ${voucherCode.toUpperCase()} (Potongan Ongkir Rp${shippingDiscount.toLocaleString()})\n`;
-        }
-        message += `🏠 Alamat: ${address}\n📱 No HP: ${phone}\n💳 Metode: ${method.toUpperCase()}`;
-
-        if (confirm('Lanjut ke halaman konfirmasi?')) {
-          localStorage.removeItem('vl_cart'); // Hapus cart setelah checkout
-          window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
-        }
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const userLat = pos.coords.latitude;
-          const userLon = pos.coords.longitude;
-          const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
-          continueCheckoutWithShipping(distance);
-        }, err => {
-          alert('⚠️ Gagal mendapatkan lokasi. Silakan aktifkan akses lokasi di browser Anda agar ongkir dihitung otomatis.');
-          return;
-        });
-      } else {
-        alert('⚠️ Browser Anda tidak mendukung akses lokasi. Gunakan browser lain atau aktifkan lokasi.');
-        return;
-      }
-    }
-
-    function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
-
-    function getShippingCost(distance) {
-      if (distance <= 1000) return 5000;
-      return 5000 + Math.ceil((distance - 1000) / 1000) * 2000;
-    }
-
-    displayOrderSummary();
-  </script>
-</body>
-</html>
+      let message = '🛒 Rincian Pesanan:\n';
+      Object.values(cart).forEach(item => {
+        message += `📦 ${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
+      });
+      message += `💸 Total Belanja: Rp${total.toLocaleString()}\n`;
+      message +=
