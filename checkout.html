@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout - VL Online Shop</title>
   <style>
     body {
@@ -11,10 +11,12 @@
       margin: 0;
       padding: 2rem;
     }
+
     h1 {
       text-align: center;
       color: #003366;
     }
+
     .checkout-form {
       max-width: 700px;
       margin: auto;
@@ -23,20 +25,24 @@
       border-radius: 10px;
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
+
     .form-group {
       margin-bottom: 1.5rem;
     }
+
     label {
       display: block;
       font-weight: bold;
       margin-bottom: 0.5rem;
     }
+
     input, select, textarea {
       width: 100%;
       padding: 0.6rem;
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+
     button {
       padding: 0.7rem 1.5rem;
       background-color: #0059b3;
@@ -46,9 +52,11 @@
       cursor: pointer;
       font-size: 1rem;
     }
+
     button:hover {
       background-color: #003366;
     }
+
     .order-summary {
       background: #f0f4f8;
       padding: 1rem;
@@ -87,25 +95,38 @@
       </select>
     </div>
 
-    <button id="checkoutBtn" onclick="processCheckout()">Selesaikan Pembayaran</button>
+    <button onclick="processCheckout()">Selesaikan Pembayaran</button>
   </div>
 
   <script>
     const cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
-    const storeLat = -1.6409491;
-    const storeLon = 105.771176;
 
     function calculateTotal() {
-      return Object.values(cart).reduce((sum, item) => sum + item.price * item.qty, 0);
+      let total = 0;
+      Object.values(cart).forEach(item => {
+        total += item.price * item.qty;
+      });
+      return total;
+    }
+
+    function displayOrderSummary() {
+      const summary = document.getElementById('order-summary');
+      let html = '<h3>Rincian Pesanan</h3><ul>';
+      Object.values(cart).forEach(item => {
+        html += `<li>${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}</li>`;
+      });
+      const total = calculateTotal();
+      html += `</ul><p><strong>Total Belanja:</strong> Rp${total.toLocaleString()}</p>`;
+      summary.innerHTML = html;
     }
 
     function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) ** 2 +
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) ** 2;
+                Math.sin(dLon/2) * Math.sin(dLon/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
@@ -114,31 +135,10 @@
       return 5000 + Math.floor(distance / 1000) * 2000;
     }
 
-    function displayOrderSummary(shippingCost = 0) {
-      const summary = document.getElementById('order-summary');
-      if (Object.keys(cart).length === 0) {
-        summary.innerHTML = '<p><em>Keranjang kosong.</em></p>';
-        document.getElementById('checkoutBtn').disabled = true;
-        return;
-      }
-
-      let html = '<h3>Rincian Pesanan</h3><ul>';
-      Object.values(cart).forEach(item => {
-        html += `<li>${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}</li>`;
-      });
-      const total = calculateTotal();
-      html += `</ul><p><strong>Total Belanja:</strong> Rp${total.toLocaleString()}</p>`;
-      if (shippingCost) {
-        html += `<p><strong>Estimasi Ongkir:</strong> Rp${shippingCost.toLocaleString()}</p>`;
-      }
-      summary.innerHTML = html;
-    }
-
     function processCheckout() {
       const address = document.getElementById('address').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const method = document.getElementById('method').value;
-      const button = document.getElementById('checkoutBtn');
 
       if (!address || !phone || !method) {
         alert('Harap lengkapi semua kolom wajib.');
@@ -151,46 +151,33 @@
         return;
       }
 
-      button.disabled = true;
-      button.textContent = 'Memproses...';
-
       navigator.geolocation.getCurrentPosition(pos => {
-        const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, pos.coords.latitude, pos.coords.longitude);
+        const userLat = pos.coords.latitude;
+        const userLon = pos.coords.longitude;
+        const storeLat = -1.6409491;
+        const storeLon = 105.771176;
+
+        const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
         const shippingCost = getShippingCost(distance);
-        const grandTotal = total + shippingCost;
 
-        let message = 'Rincian Pesanan:%0A';
+        let message = 'Rincian Pesanan:\n';
         Object.values(cart).forEach(item => {
-          message += `- ${item.name} x ${item.qty} = Rp${(item.price * item.qty).toLocaleString()}%0A`;
+          message += `${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
         });
-        message += `Total Belanja: Rp${total.toLocaleString()}%0A`;
-        message += `Ongkir: Rp${shippingCost.toLocaleString()}%0A`;
-        message += `Grand Total: Rp${grandTotal.toLocaleString()}%0A%0A`;
-        message += `Alamat: ${address}%0A`;
-        message += `No HP: ${phone}%0A`;
-        message += `Metode: ${method.toUpperCase()}`;
+        message += `Total Belanja: Rp${total.toLocaleString()}\n`;
+        message += `Ongkir: Rp${shippingCost.toLocaleString()}\n`;
+        message += `Alamat: ${address}\nNo HP: ${phone}\nMetode: ${method.toUpperCase()}`;
 
-        if (confirm('Lanjut ke WhatsApp untuk konfirmasi pesanan?')) {
-          window.location.href = `https://wa.me/6285709458101?text=${message}`;
-        } else {
-          button.disabled = false;
-          button.textContent = 'Selesaikan Pembayaran';
+        if (confirm('Lanjut ke halaman konfirmasi?')) {
+          alert('Silakan screenshot halaman ini.');
+          window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
         }
-      }, () => {
-        alert('Gagal mendapatkan lokasi. Pastikan izin lokasi diaktifkan.');
-        button.disabled = false;
-        button.textContent = 'Selesaikan Pembayaran';
+      }, err => {
+        alert('Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.');
       });
     }
 
-    // Estimasi ongkir saat halaman dimuat (jika user izinkan)
-    navigator.geolocation.getCurrentPosition(pos => {
-      const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, pos.coords.latitude, pos.coords.longitude);
-      const shipping = getShippingCost(distance);
-      displayOrderSummary(shipping);
-    }, () => {
-      displayOrderSummary();
-    });
+    displayOrderSummary();
   </script>
 </body>
 </html>
