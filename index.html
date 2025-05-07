@@ -72,6 +72,18 @@
       border-radius: 8px;
       cursor: pointer;
     }
+    #cartContainer {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-top: 30px;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -79,7 +91,7 @@
     <div>🛍️ <span>VL ONLINE SHOP</span></div>
   </header>
   <div class="container">
-    <div class="product" data-price="50000">
+    <div class="product" data-id="1" data-price="50000">
       <img src="https://via.placeholder.com/100" alt="Produk 1">
       <div class="info">
         <h3>Produk Elegan 1</h3>
@@ -91,7 +103,7 @@
       </div>
     </div>
 
-    <div class="product" data-price="75000">
+    <div class="product" data-id="2" data-price="75000">
       <img src="https://via.placeholder.com/100" alt="Produk 2">
       <div class="info">
         <h3>Produk Elegan 2</h3>
@@ -103,7 +115,12 @@
       </div>
     </div>
 
-    <button onclick="checkout()">Checkout</button>
+    <div id="cartContainer">
+      <h3>Keranjang Belanja</h3>
+      <div id="cartList"></div>
+      <p><strong>Total:</strong> Rp<span id="totalPrice">0</span></p>
+      <button onclick="checkout()">Checkout</button>
+    </div>
   </div>
 
   <script>
@@ -111,16 +128,84 @@
 
     function addToCart(button) {
       const product = button.closest('.product');
+      const id = product.getAttribute('data-id');
+      const name = product.querySelector('h3').textContent;
       const price = parseInt(product.getAttribute('data-price'));
       const quantity = parseInt(product.querySelector('.quantity').value);
-      const total = price * quantity;
-      cart.push(total);
-      alert(`Produk ditambahkan. Subtotal: Rp${total.toLocaleString('id-ID')}`);
+
+      const existing = cart.find(item => item.id === id);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        cart.push({ id, name, price, quantity });
+      }
+
+      renderCart();
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(item => item.id !== id);
+      renderCart();
+    }
+
+    function renderCart() {
+      const cartList = document.getElementById("cartList");
+      const totalEl = document.getElementById("totalPrice");
+      cartList.innerHTML = '';
+
+      let total = 0;
+      cart.forEach(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        cartList.innerHTML += `
+          <div class="cart-item">
+            <span>${item.name} x ${item.quantity} = Rp${subtotal.toLocaleString('id-ID')}</span>
+            <button onclick="removeFromCart('${item.id}')">Hapus</button>
+          </div>
+        `;
+      });
+
+      totalEl.textContent = total.toLocaleString('id-ID');
     }
 
     function checkout() {
-      const total = cart.reduce((sum, val) => sum + val, 0);
-      window.location.href = `payment.html?total=${total}`;
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          const storeLat = -1.6409491;
+          const storeLng = 105.771176;
+
+          const R = 6371e3; // meters
+          const φ1 = userLat * Math.PI / 180;
+          const φ2 = storeLat * Math.PI / 180;
+          const Δφ = (storeLat - userLat) * Math.PI / 180;
+          const Δλ = (storeLng - userLng) * Math.PI / 180;
+
+          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+          const distance = R * c; // in meters
+
+          let shipping = 5000;
+          if (distance > 1000) {
+            const extraKm = Math.ceil((distance - 1000) / 1000);
+            shipping += extraKm * 2000;
+          }
+
+          const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const grandTotal = total + shipping;
+
+          alert(`Jarak Anda: ${(distance/1000).toFixed(2)} km\nOngkir: Rp${shipping.toLocaleString('id-ID')}\nTotal Belanja: Rp${grandTotal.toLocaleString('id-ID')}`);
+        }, () => {
+          alert("Gagal mendapatkan lokasi Anda.");
+        });
+      } else {
+        alert("Browser tidak mendukung geolokasi.");
+      }
     }
   </script>
 </body>
