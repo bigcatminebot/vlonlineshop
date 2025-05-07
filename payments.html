@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halaman Pembayaran</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+      color: #333;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    #map {
+      height: 300px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    .summary {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h2>Halaman Pembayaran</h2>
+  <div id="map"></div>
+  <div class="summary">
+    <p><strong>Total Belanja:</strong> <span id="totalBelanja"></span></p>
+    <p><strong>Jarak ke Toko:</strong> <span id="distance"></span></p>
+    <p><strong>Ongkos Kirim:</strong> <span id="shipping"></span></p>
+    <p><strong>Total Akhir:</strong> <span id="totalAkhir"></span></p>
+  </div>
+
+  <script>
+    // Lokasi toko tetap
+    const toko = { lat: -6.200000, lng: 106.816666 }; // Contoh: Jakarta Pusat
+    const urlParams = new URLSearchParams(window.location.search);
+    const totalBelanja = parseInt(urlParams.get('total')) || 0;
+
+    function formatRupiah(angka) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(angka);
+    }
+
+    function calculateShipping(distanceInMeters) {
+      if (distanceInMeters <= 1000) return 5000;
+      const extraKm = Math.ceil((distanceInMeters - 1000) / 1000);
+      return 5000 + (extraKm * 2000);
+    }
+
+    function showOnMap(userLatLng) {
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: toko,
+        zoom: 14,
+      });
+
+      new google.maps.Marker({ position: toko, map, label: 'T' });
+      new google.maps.Marker({ position: userLatLng, map, label: 'P' });
+    }
+
+    function haversineDistance(coord1, coord2) {
+      const R = 6371000; // Earth radius in meters
+      const toRad = x => x * Math.PI / 180;
+
+      const dLat = toRad(coord2.lat - coord1.lat);
+      const dLng = toRad(coord2.lng - coord1.lng);
+
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLng / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // in meters
+    }
+
+    function init() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const pembeli = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          showOnMap(pembeli);
+
+          const distance = haversineDistance(toko, pembeli);
+          const ongkir = calculateShipping(distance);
+          const totalAkhir = totalBelanja + ongkir;
+
+          document.getElementById("totalBelanja").textContent = formatRupiah(totalBelanja);
+          document.getElementById("distance").textContent = (distance / 1000).toFixed(2) + ' km';
+          document.getElementById("shipping").textContent = formatRupiah(ongkir);
+          document.getElementById("totalAkhir").textContent = formatRupiah(totalAkhir);
+        }, err => {
+          alert("Tidak dapat mendeteksi lokasi Anda.");
+        });
+      } else {
+        alert("Geolocation tidak didukung di browser Anda.");
+      }
+    }
+
+    window.onload = init;
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY">
+  </script>
+</body>
+</html>
