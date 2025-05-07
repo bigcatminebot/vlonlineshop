@@ -38,8 +38,8 @@
   </div>
 
   <script>
-    // Lokasi toko tetap
-    const toko = { lat: -6.200000, lng: 106.816666 }; // Contoh: Jakarta Pusat
+    // Lokasi toko tetap berdasarkan link Vistra Delivery
+    const toko = { lat: -1.6409491, lng: 105.771176 };
     const urlParams = new URLSearchParams(window.location.search);
     const totalBelanja = parseInt(urlParams.get('total')) || 0;
 
@@ -53,26 +53,14 @@
       return 5000 + (extraKm * 2000);
     }
 
-    function showOnMap(userLatLng) {
-      const map = new google.maps.Map(document.getElementById("map"), {
-        center: toko,
-        zoom: 14,
-      });
-
-      new google.maps.Marker({ position: toko, map, label: 'T' });
-      new google.maps.Marker({ position: userLatLng, map, label: 'P' });
-    }
-
     function haversineDistance(coord1, coord2) {
-      const R = 6371000; // Earth radius in meters
+      const R = 6371000; // radius bumi dalam meter
       const toRad = x => x * Math.PI / 180;
-
       const dLat = toRad(coord2.lat - coord1.lat);
       const dLng = toRad(coord2.lng - coord1.lng);
-
       const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLng / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // in meters
+      return R * c;
     }
 
     function init() {
@@ -83,8 +71,6 @@
             lng: position.coords.longitude
           };
 
-          showOnMap(pembeli);
-
           const distance = haversineDistance(toko, pembeli);
           const ongkir = calculateShipping(distance);
           const totalAkhir = totalBelanja + ongkir;
@@ -93,18 +79,25 @@
           document.getElementById("distance").textContent = (distance / 1000).toFixed(2) + ' km';
           document.getElementById("shipping").textContent = formatRupiah(ongkir);
           document.getElementById("totalAkhir").textContent = formatRupiah(totalAkhir);
+
+          // Tampilkan peta menggunakan iframe Google Maps (tanpa API)
+          const mapFrame = document.createElement('iframe');
+          mapFrame.width = '100%';
+          mapFrame.height = '300';
+          mapFrame.style.border = '0';
+          mapFrame.loading = 'lazy';
+          mapFrame.referrerPolicy = 'no-referrer-when-downgrade';
+          mapFrame.src = `https://maps.google.com/maps?q=${pembeli.lat},${pembeli.lng}&hl=id&z=15&output=embed`;
+          document.getElementById('map').appendChild(mapFrame);
         }, err => {
-          alert("Tidak dapat mendeteksi lokasi Anda.");
+          alert("Gagal mendeteksi lokasi Anda.");
         });
       } else {
-        alert("Geolocation tidak didukung di browser Anda.");
+        alert("Geolocation tidak didukung oleh browser Anda.");
       }
     }
 
     window.onload = init;
-  </script>
-  <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY">
   </script>
 </body>
 </html>
