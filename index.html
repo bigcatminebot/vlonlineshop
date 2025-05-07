@@ -20,7 +20,7 @@
       top: 0;
       background: linear-gradient(to right, #003366, #0059b3);
       color: white;
-      padding: 1rem 1.5rem;
+      padding: 0.8rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -29,7 +29,7 @@
 
     header h1 {
       margin: 0;
-      font-size: 1.4rem;
+      font-size: 1.2rem;
     }
 
     .search-box {
@@ -97,21 +97,98 @@
     .cart {
       margin-top: 2rem;
       background: white;
-      padding: 1rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      transition: all 0.4s ease;
+      animation: slideUp 0.5s ease-in-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .cart h2 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 1rem;
     }
 
     .cart ul {
       list-style: none;
       padding: 0;
+      max-height: 300px;
+      overflow-y: auto;
     }
 
     .cart li {
+      background: #eef3fb;
+      margin-bottom: 0.6rem;
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
       display: flex;
       justify-content: space-between;
-      padding: 0.5rem 0;
+      align-items: center;
+      transition: background 0.3s ease;
     }
+
+    .cart li:hover {
+      background: #d8e8fc;
+    }
+
+    #cart-total {
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-align: right;
+      margin-top: 1rem;
+    }
+
+    .cart button {
+      display: block;
+      margin: 1rem auto 0;
+      padding: 0.6rem 1.5rem;
+      font-size: 1rem;
+      background-color: #0059b3;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .cart button:hover {
+      background-color: #003f7f;
+    }
+
+    .cart-icon {
+      position: relative;
+      display: inline-block;
+      font-size: 1.5rem;
+      cursor: pointer;
+      margin-right: 1rem;
+    }
+
+    .cart-icon::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: red;
+      color: white;
+      font-size: 0.8rem;
+      border-radius: 50%;
+      padding: 0.3rem;
+      min-width: 20px;
+      text-align: center;
+    }
+
   </style>
 </head>
 <body>
@@ -120,11 +197,14 @@
     <div class="search-box">
       <input type="text" id="search" placeholder="Cari produk...">
     </div>
+    <div class="cart-icon" id="cart-icon" data-count="0" onclick="toggleCart()">
+      🛒
+    </div>
   </header>
 
   <main>
     <section class="products" id="product-list"></section>
-    <section class="cart" id="cart-section">
+    <section class="cart" id="cart-section" style="display: none;">
       <h2>Keranjang</h2>
       <ul id="cart-items"></ul>
       <p id="cart-total"></p>
@@ -137,7 +217,6 @@
       { id: 1, name: 'Produk A', price: 15000, description: 'Deskripsi produk A' },
       { id: 2, name: 'Produk B', price: 20000, description: 'Deskripsi produk B' },
       { id: 3, name: 'Produk C', price: 18000, description: 'Deskripsi produk C' },
-      // Tambahkan sampai 25 produk
     ];
 
     let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
@@ -182,6 +261,7 @@
     function saveCart() {
       localStorage.setItem('vl_cart', JSON.stringify(cart));
       renderCart();
+      updateCartIcon();
     }
 
     function renderCart() {
@@ -196,6 +276,17 @@
         total += item.qty * item.price;
       });
       totalBox.textContent = `Total: Rp${total.toLocaleString()}`;
+    }
+
+    function updateCartIcon() {
+      const cartCount = Object.values(cart).reduce((acc, item) => acc + item.qty, 0);
+      const cartIcon = document.getElementById('cart-icon');
+      cartIcon.setAttribute('data-count', cartCount);
+    }
+
+    function toggleCart() {
+      const cartSection = document.getElementById('cart-section');
+      cartSection.style.display = cartSection.style.display === 'none' ? 'block' : 'none';
     }
 
     document.getElementById('search').addEventListener('input', function() {
@@ -219,6 +310,7 @@
 
     renderProducts();
     renderCart();
+    updateCartIcon();
   </script>
 </body>
 </html>
