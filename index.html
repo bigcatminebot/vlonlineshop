@@ -146,7 +146,6 @@
       border-radius: 5px;
       text-align: center;
       margin-top: 0.5rem;
-      width: 100%;
       font-size: 1rem;
       transition: background 0.3s ease;
     }
@@ -157,18 +156,15 @@
 
     .badge {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100px;
+      top: 10px;
+      right: 10px;
       background: gold;
       color: #003366;
       font-weight: bold;
       text-align: center;
-      transform: rotate(-45deg);
-      transform-origin: 0 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      padding: 0.3rem 0.7rem;
+      border-radius: 5px;
       font-size: 0.8rem;
-      padding: 0.3rem 0;
     }
 
     /* Keranjang Popup */
@@ -244,7 +240,7 @@
 
     .cart-icon {
       position: fixed;
-      top: 20px;
+      bottom: 20px;
       right: 20px;
       font-size: 2rem;
       cursor: pointer;
@@ -273,6 +269,23 @@
     .cart-icon:hover {
       background-color: #f5f7fa;
     }
+
+    .quantity-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fa;
+      border-radius: 5px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #003366;
+    }
+
+    .quantity-btn:hover {
+      background: #ececec;
+    }
+
   </style>
 </head>
 <body>
@@ -336,6 +349,14 @@
       saveCart();
     }
 
+    function removeFromCart(id) {
+      if (cart[id]) {
+        cart[id].qty--;
+        if (cart[id].qty <= 0) delete cart[id];
+        saveCart();
+      }
+    }
+
     function saveCart() {
       localStorage.setItem('vl_cart', JSON.stringify(cart));
       renderCart();
@@ -353,7 +374,13 @@
 
       Object.values(cart).forEach(item => {
         const li = document.createElement('li');
-        li.textContent = `${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}`;
+        li.innerHTML = `
+          ${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}
+          <div>
+            <button class="quantity-btn" onclick="removeFromCart(${item.id})">-</button>
+            <button class="quantity-btn" onclick="addToCart(${item.id})">+</button>
+          </div>
+        `;
         items.appendChild(li);
         total += item.qty * item.price;
         hasItems = true;
