@@ -1,147 +1,125 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VL ONLINE SHOP</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
     body {
-      background: linear-gradient(to right, #2c3e50, #4ca1af);
-      color: #fff;
-      padding-top: 80px;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f5f2;
+      color: #333;
     }
-
     header {
-      position: fixed;
+      position: sticky;
       top: 0;
-      left: 0;
-      width: 100%;
-      height: 80px;
       background-color: #1a1a1a;
+      color: white;
+      padding: 15px 30px;
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      z-index: 1000;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    }
-
-    .logo {
-      font-size: 1.5rem;
+      font-size: 24px;
       font-weight: bold;
-      color: #f1c40f;
+      z-index: 1000;
     }
-
-    .catalog {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
+    header span {
+      color: #e0b973;
+      margin-left: 10px;
+    }
+    .container {
       padding: 40px;
     }
-
     .product {
-      background-color: #2f2f2f;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-
     .product img {
-      max-width: 100%;
-      border-radius: 10px;
+      width: 100px;
+      height: auto;
+      border-radius: 8px;
     }
-
-    .product h3 {
-      margin: 15px 0 10px;
+    .info {
+      flex-grow: 1;
+      padding: 0 20px;
     }
-
-    .product p {
-      font-size: 1.2rem;
-      color: #f39c12;
+    .info h3 {
+      margin: 0 0 10px 0;
+    }
+    .info p {
+      margin: 5px 0;
+    }
+    .actions {
+      text-align: right;
+    }
+    .quantity {
+      width: 50px;
+      padding: 5px;
       margin-bottom: 10px;
+      text-align: center;
     }
-
-    .product button {
-      padding: 10px 20px;
+    button {
+      padding: 8px 16px;
+      background-color: #e0b973;
+      color: white;
       border: none;
-      background-color: #f39c12;
-      color: #000;
-      font-weight: bold;
+      border-radius: 8px;
       cursor: pointer;
-      border-radius: 5px;
-    }
-
-    .checkout {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #27ae60;
-      color: #fff;
-      padding: 15px 25px;
-      border-radius: 30px;
-      font-size: 1rem;
-      cursor: pointer;
-      display: none;
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo">VL ONLINE SHOP</div>
+    <div>🛍️ <span>VL ONLINE SHOP</span></div>
   </header>
+  <div class="container">
+    <div class="product" data-price="50000">
+      <img src="https://via.placeholder.com/100" alt="Produk 1">
+      <div class="info">
+        <h3>Produk Elegan 1</h3>
+        <p>Harga: Rp50.000</p>
+      </div>
+      <div class="actions">
+        <input type="number" class="quantity" value="1" min="1">
+        <button onclick="addToCart(this)">Tambah ke Keranjang</button>
+      </div>
+    </div>
 
-  <div class="catalog" id="catalog">
-    <div class="product" data-price="100000">
-      <img src="https://via.placeholder.com/200" alt="Product 1">
-      <h3>Produk A</h3>
-      <p>Rp100.000</p>
-      <button onclick="addToCart(100000)">Tambah ke Keranjang</button>
+    <div class="product" data-price="75000">
+      <img src="https://via.placeholder.com/100" alt="Produk 2">
+      <div class="info">
+        <h3>Produk Elegan 2</h3>
+        <p>Harga: Rp75.000</p>
+      </div>
+      <div class="actions">
+        <input type="number" class="quantity" value="1" min="1">
+        <button onclick="addToCart(this)">Tambah ke Keranjang</button>
+      </div>
     </div>
-    <div class="product" data-price="150000">
-      <img src="https://via.placeholder.com/200" alt="Product 2">
-      <h3>Produk B</h3>
-      <p>Rp150.000</p>
-      <button onclick="addToCart(150000)">Tambah ke Keranjang</button>
-    </div>
-    <div class="product" data-price="200000">
-      <img src="https://via.placeholder.com/200" alt="Product 3">
-      <h3>Produk C</h3>
-      <p>Rp200.000</p>
-      <button onclick="addToCart(200000)">Tambah ke Keranjang</button>
-    </div>
-  </div>
 
-  <div class="checkout" id="checkoutBtn" onclick="goToCheckout()">
-    Bayar Sekarang (Rp0)
+    <button onclick="checkout()">Checkout</button>
   </div>
 
   <script>
-    let total = 0;
+    let cart = [];
 
-    function formatRupiah(angka) {
-      return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR'
-      }).format(angka);
+    function addToCart(button) {
+      const product = button.closest('.product');
+      const price = parseInt(product.getAttribute('data-price'));
+      const quantity = parseInt(product.querySelector('.quantity').value);
+      const total = price * quantity;
+      cart.push(total);
+      alert(`Produk ditambahkan. Subtotal: Rp${total.toLocaleString('id-ID')}`);
     }
 
-    function addToCart(price) {
-      total += price;
-      const btn = document.getElementById('checkoutBtn');
-      btn.innerText = `Bayar Sekarang (${formatRupiah(total)})`;
-      btn.style.display = 'block';
-    }
-
-    function goToCheckout() {
-      alert(`Total belanja Anda: ${formatRupiah(total)}\nMenuju halaman pembayaran...`);
-      // Simulasi redirect
+    function checkout() {
+      const total = cart.reduce((sum, val) => sum + val, 0);
       window.location.href = `payment.html?total=${total}`;
     }
   </script>
