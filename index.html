@@ -20,7 +20,7 @@
       top: 0;
       background: linear-gradient(to right, #003366, #0059b3);
       color: white;
-      padding: 0.8rem 1.5rem;
+      padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -111,6 +111,19 @@
       background: #003366;
     }
 
+    .badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: gold;
+      color: #333;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
     .cart {
       margin-top: 2rem;
       background: white;
@@ -178,36 +191,31 @@
       background-color: #003f7f;
     }
 
+    .cart button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .cart-icon {
       position: relative;
+      display: inline-block;
       font-size: 1.5rem;
       cursor: pointer;
+      margin-left: auto;
     }
 
     .cart-icon::after {
       content: attr(data-count);
       position: absolute;
       top: -5px;
-      right: -10px;
+      right: -5px;
       background: red;
       color: white;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       border-radius: 50%;
-      padding: 0.2rem 0.5rem;
+      padding: 0.3rem;
+      min-width: 20px;
       text-align: center;
-    }
-
-    .badge {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background-color: gold;
-      color: black;
-      padding: 0.3rem 0.6rem;
-      border-radius: 5px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      z-index: 10;
     }
   </style>
 </head>
@@ -223,7 +231,6 @@
 
   <main>
     <section class="products" id="product-list"></section>
-
     <section class="cart" id="cart-section" style="display: none;">
       <h2>Keranjang</h2>
       <ul id="cart-items"></ul>
@@ -236,42 +243,36 @@
     const products = [
       {
         id: 1,
-        name: 'Kaos Polos',
-        category: 'Pakaian',
-        store: 'Toko Alpha',
+        name: 'Kaos Polos Hitam',
         price: 50000,
-        description: 'Kaos katun nyaman dipakai',
+        description: 'Pakaian kasual cocok untuk sehari-hari.',
         image: 'https://via.placeholder.com/200x150?text=Kaos+Polos',
         bestSeller: true
       },
       {
         id: 2,
-        name: 'Celana Jeans',
-        category: 'Pakaian',
-        store: 'Toko Bravo',
+        name: 'Celana Jeans Slim Fit',
         price: 120000,
-        description: 'Celana jeans pria modern',
-        image: 'https://via.placeholder.com/200x150?text=Celana+Jeans',
+        description: 'Celana jeans nyaman dan stylish.',
+        image: 'https://via.placeholder.com/200x150?text=Jeans',
         bestSeller: false
       },
       {
         id: 3,
-        name: 'Topi Trucker',
-        category: 'Aksesoris',
-        store: 'Toko Alpha',
-        price: 35000,
-        description: 'Topi gaya kasual',
-        image: 'https://via.placeholder.com/200x150?text=Topi+Trucker',
+        name: 'Hoodie VL Premium',
+        price: 150000,
+        description: 'Hoodie tebal dan hangat, cocok untuk musim dingin.',
+        image: 'https://via.placeholder.com/200x150?text=Hoodie',
         bestSeller: true
       }
     ];
 
     let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
 
-    function renderProducts(list = products) {
+    function renderProducts() {
       const container = document.getElementById('product-list');
       container.innerHTML = '';
-      list.forEach(p => {
+      products.forEach(p => {
         const qtyInCart = cart[p.id]?.qty || 0;
         const item = document.createElement('div');
         item.className = 'product';
@@ -279,4 +280,101 @@
           ${p.bestSeller ? '<div class="badge">Best Seller</div>' : ''}
           <img src="${p.image}" alt="${p.name}">
           <h3>${p.name}</h3>
-          <p
+          <p>${p.description}</p>
+          <p>Rp${p.price.toLocaleString()}</p>
+          <button onclick="addToCart(${p.id})">Tambah</button>
+          <button onclick="removeFromCart(${p.id})" ${qtyInCart === 0 ? 'disabled' : ''}>Kurangi</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function addToCart(id) {
+      const prod = products.find(p => p.id === id);
+      if (!cart[id]) cart[id] = { ...prod, qty: 1 };
+      else cart[id].qty++;
+      saveCart();
+    }
+
+    function removeFromCart(id) {
+      if (cart[id]) {
+        if (cart[id].qty === 1) {
+          if (confirm("Yakin menghapus produk dari keranjang?")) {
+            delete cart[id];
+          }
+        } else {
+          cart[id].qty--;
+        }
+        saveCart();
+      }
+    }
+
+    function saveCart() {
+      localStorage.setItem('vl_cart', JSON.stringify(cart));
+      renderCart();
+      renderProducts();
+      updateCartIcon();
+    }
+
+    function renderCart() {
+      const items = document.getElementById('cart-items');
+      const totalBox = document.getElementById('cart-total');
+      const checkoutBtn = document.getElementById('checkout-btn');
+      items.innerHTML = '';
+      let total = 0;
+      let hasItems = false;
+
+      Object.values(cart).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}`;
+        items.appendChild(li);
+        total += item.qty * item.price;
+        hasItems = true;
+      });
+
+      totalBox.textContent = `Total: Rp${total.toLocaleString()}`;
+      checkoutBtn.disabled = !hasItems;
+    }
+
+    function updateCartIcon() {
+      const cartCount = Object.values(cart).reduce((acc, item) => acc + item.qty, 0);
+      const cartIcon = document.getElementById('cart-icon');
+      cartIcon.setAttribute('data-count', cartCount);
+    }
+
+    function toggleCart() {
+      const cartSection = document.getElementById('cart-section');
+      cartSection.style.display = cartSection.style.display === 'none' ? 'block' : 'none';
+    }
+
+    document.getElementById('search').addEventListener('input', function () {
+      const keyword = this.value.toLowerCase();
+      const filtered = products.filter(p =>
+        p.name.toLowerCase().includes(keyword) ||
+        p.description.toLowerCase().includes(keyword)
+      );
+      const container = document.getElementById('product-list');
+      container.innerHTML = '';
+      filtered.forEach(p => {
+        const qtyInCart = cart[p.id]?.qty || 0;
+        const item = document.createElement('div');
+        item.className = 'product';
+        item.innerHTML = `
+          ${p.bestSeller ? '<div class="badge">Best Seller</div>' : ''}
+          <img src="${p.image}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <p>Rp${p.price.toLocaleString()}</p>
+          <button onclick="addToCart(${p.id})">Tambah</button>
+          <button onclick="removeFromCart(${p.id})" ${qtyInCart === 0 ? 'disabled' : ''}>Kurangi</button>
+        `;
+        container.appendChild(item);
+      });
+    });
+
+    renderProducts();
+    renderCart();
+    updateCartIcon();
+  </script>
+</body>
+</html>
