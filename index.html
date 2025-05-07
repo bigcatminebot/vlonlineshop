@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VL ONLINE SHOP - Pembayaran</title>
+  <title>VL ONLINE SHOP</title>
   <style>
     body {
       margin: 0;
@@ -12,50 +12,51 @@
       color: #333;
     }
     header {
-      position: sticky;
-      top: 0;
       background-color: #1a1a1a;
       color: white;
       padding: 15px 30px;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       font-size: 24px;
       font-weight: bold;
-      z-index: 1000;
     }
     header span {
       color: #e0b973;
-      margin-left: 10px;
     }
     .container {
-      padding: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 20px;
     }
-    #summary {
+    .product {
       background: white;
-      padding: 30px;
+      padding: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+      text-align: center;
+      transition: transform 0.3s ease;
     }
-    #map {
+    .product:hover {
+      transform: scale(1.05);
+    }
+    .product img {
       width: 100%;
-      height: 300px;
-      border-radius: 12px;
-      margin-top: 20px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
     }
-    h2 {
+    .product h3 {
+      margin: 10px 0;
+      font-size: 18px;
       color: #1a1a1a;
     }
-    ul {
-      padding-left: 20px;
+    .product p {
+      color: #e0b973;
+      font-size: 16px;
     }
-    li {
-      margin-bottom: 10px;
-    }
-    #manualLocation {
-      margin-top: 20px;
-    }
-    button {
+    .product button {
       margin-top: 10px;
       padding: 8px 12px;
       background-color: #1a1a1a;
@@ -64,122 +65,88 @@
       border-radius: 6px;
       cursor: pointer;
     }
+    .product button:hover {
+      background-color: #e0b973;
+    }
+    .cart {
+      background-color: #1a1a1a;
+      color: white;
+      padding: 10px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <header>
     <div>🛍️ <span>VL ONLINE SHOP</span></div>
+    <div>
+      <button onclick="goToCart()">Keranjang <span id="cartCount">0</span> item</button>
+    </div>
   </header>
-  <div class="container">
-    <div id="summary">
-      <h2>Ringkasan Pembelian</h2>
-      <ul id="orderList"></ul>
-      <p><strong>Ongkir:</strong> Rp<span id="shipping">0</span></p>
-      <p><strong>Total:</strong> Rp<span id="total">0</span></p>
-      <p><strong>Jarak ke toko:</strong> <span id="distance">0</span> km</p>
-    </div>
 
-    <div id="manualLocation">
-      <h3>Atau tentukan lokasi secara manual dengan klik peta:</h3>
-      <button onclick="enableManualMarker()">Aktifkan Penanda Manual</button>
-    </div>
-
-    <div id="map"></div>
+  <div class="container" id="productContainer">
+    <!-- Produk akan ditambahkan di sini -->
   </div>
 
+  <div class="cart" onclick="goToCart()">🛒</div>
+
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const cartData = JSON.parse(decodeURIComponent(params.get('cart')));
+    const products = [
+      { id: 1, name: "Produk A", price: 50000, image: "https://via.placeholder.com/300x200?text=Produk+A" },
+      { id: 2, name: "Produk B", price: 75000, image: "https://via.placeholder.com/300x200?text=Produk+B" },
+      { id: 3, name: "Produk C", price: 100000, image: "https://via.placeholder.com/300x200?text=Produk+C" },
+      { id: 4, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D" },
+    ];
 
-    const orderList = document.getElementById('orderList');
-    const shippingEl = document.getElementById('shipping');
-    const totalEl = document.getElementById('total');
-    const distanceEl = document.getElementById('distance');
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-    const storeLat = -1.6409491;
-    const storeLng = 105.771176;
-    let totalHarga = 0;
-    let map;
-    let manualMarker;
-    let allowManual = false;
-
-    function calculateDistance(userLat, userLng) {
-      const R = 6371e3;
-      const φ1 = userLat * Math.PI / 180;
-      const φ2 = storeLat * Math.PI / 180;
-      const Δφ = (storeLat - userLat) * Math.PI / 180;
-      const Δλ = (storeLng - userLng) * Math.PI / 180;
-
-      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ/2) * Math.sin(Δλ/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-      return R * c;
-    }
-
-    function tampilkanPeta(userLat, userLng) {
-      map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 15,
-        center: { lat: userLat, lng: userLng },
-      });
-
-      new google.maps.Marker({ position: { lat: storeLat, lng: storeLng }, map, label: "Toko" });
-      new google.maps.Marker({ position: { lat: userLat, lng: userLng }, map, label: "Anda" });
-
-      map.addListener("click", function(e) {
-        if (!allowManual) return;
-        if (manualMarker) manualMarker.setMap(null);
-        manualMarker = new google.maps.Marker({ position: e.latLng, map, label: "Anda" });
-        hitungOngkir(e.latLng.lat(), e.latLng.lng());
+    function renderProducts() {
+      const productContainer = document.getElementById('productContainer');
+      productContainer.innerHTML = '';
+      products.forEach(product => {
+        const productElement = document.createElement('div');
+        productElement.classList.add('product');
+        productElement.innerHTML = `
+          <img src="${product.image}" alt="${product.name}">
+          <h3>${product.name}</h3>
+          <p>Rp ${product.price.toLocaleString('id-ID')}</p>
+          <button onclick="addToCart(${product.id})">Tambah ke Keranjang</button>
+        `;
+        productContainer.appendChild(productElement);
       });
     }
 
-    function hitungOngkir(userLat, userLng) {
-      const distance = calculateDistance(userLat, userLng);
-      distanceEl.textContent = (distance / 1000).toFixed(2);
+    function addToCart(productId) {
+      const product = products.find(p => p.id === productId);
+      const existingProduct = cart.find(p => p.id === productId);
 
-      let shipping = 5000;
-      if (distance > 1000) {
-        const extraKm = Math.ceil((distance - 1000) / 1000);
-        shipping += extraKm * 2000;
-      }
-
-      shippingEl.textContent = shipping.toLocaleString('id-ID');
-      totalEl.textContent = (totalHarga + shipping).toLocaleString('id-ID');
-    }
-
-    function enableManualMarker() {
-      allowManual = true;
-      alert("Klik pada peta untuk memilih lokasi Anda.");
-    }
-
-    function renderCart(cart) {
-      totalHarga = 0;
-      cart.forEach(item => {
-        const subtotal = item.price * item.quantity;
-        totalHarga += subtotal;
-        const li = document.createElement('li');
-        li.textContent = `${item.name} x ${item.quantity} = Rp${subtotal.toLocaleString('id-ID')}`;
-        orderList.appendChild(li);
-      });
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-          hitungOngkir(position.coords.latitude, position.coords.longitude);
-          tampilkanPeta(position.coords.latitude, position.coords.longitude);
-        }, () => {
-          alert("Gagal mendapatkan lokasi Anda. Silakan pilih lokasi di peta.");
-          tampilkanPeta(storeLat, storeLng);
-        });
+      if (existingProduct) {
+        existingProduct.quantity += 1;
       } else {
-        alert("Geolokasi tidak didukung browser. Silakan pilih lokasi di peta.");
-        tampilkanPeta(storeLat, storeLng);
+        cart.push({ ...product, quantity: 1 });
       }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
     }
 
-    renderCart(cartData);
+    function updateCartCount() {
+      const cartCount = document.getElementById('cartCount');
+      cartCount.textContent = cart.reduce((acc, item) => acc + item.quantity, 0);
+    }
+
+    function goToCart() {
+      const cartData = encodeURIComponent(JSON.stringify(cart));
+      window.location.href = `pembayaran.html?cart=${cartData}`;
+    }
+
+    renderProducts();
+    updateCartCount();
   </script>
-  <script async src="https://maps.googleapis.com/maps/api/js?callback=Function.prototype"></script>
 </body>
 </html>
