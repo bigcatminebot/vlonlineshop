@@ -50,10 +50,6 @@
       font-weight: bold;
       color: #e0b973;
     }
-    .delivery-map {
-      height: 300px;
-      margin-bottom: 20px;
-    }
     .delivery-info input {
       padding: 10px;
       width: 80%;
@@ -91,7 +87,6 @@
     <!-- Delivery Information -->
     <div class="delivery-info">
       <h3>Informasi Pengiriman</h3>
-      <div id="map" class="delivery-map"></div>
       <input type="text" id="address" placeholder="Cari lokasi pengiriman..." />
       <button onclick="getShippingCost()">Cek Ongkir</button>
       <div id="shippingCost">Ongkir: -</div>
@@ -123,91 +118,46 @@
 
     totalPriceContainer.textContent = `Total: Rp ${total.toLocaleString('id-ID')}`;
 
-    // Google Maps API Setup
-    let map, marker;
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: centerLocation,
-        zoom: 15,
-      });
-
-      marker = new google.maps.Marker({
-        position: centerLocation,
-        map: map,
-        title: "Lokasi Toko",
-      });
-
-      const searchBox = new google.maps.places.SearchBox(document.getElementById("address"));
-      map.controls[google.maps.ControlPosition.TOP_LEFT].push(document.getElementById("address"));
-      
-      searchBox.addListener("places_changed", function () {
-        const places = searchBox.getPlaces();
-        if (places.length === 0) return;
-        
-        const place = places[0];
-        const location = place.geometry.location;
-
-        marker.setPosition(location);
-        map.setCenter(location);
-
-        // Store the selected location for shipping cost calculation
-        selectedLocation = location;
-      });
+    // Haversine formula to calculate distance in kilometers
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of the Earth in kilometers
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // in kilometers
+      return distance;
     }
 
-    // Calculate Shipping Cost Based on Distance
-    let selectedLocation = null;
+    // Get shipping cost based on location
     function getShippingCost() {
-      if (!selectedLocation) {
-        alert('Harap tentukan lokasi pengiriman terlebih dahulu');
-        return;
-      }
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
 
-      const distanceService = new google.maps.DistanceMatrixService();
-      distanceService.getDistanceMatrix(
-        {
-          origins: [centerLocation],
-          destinations: [selectedLocation],
-          travelMode: google.maps.TravelMode.DRIVING,
-        },
-        function (response, status) {
-          if (status === "OK") {
-            const distance = response.rows[0].elements[0].distance.value / 1000;  // in km
-            let shippingCost = 5000;  // Ongkir awal Rp 5000 untuk jarak <= 1 km
+          const distance = getDistance(centerLocation.lat, centerLocation.lng, userLat, userLng);
+          let shippingCost = 5000;  // Ongkir awal Rp 5000 untuk jarak <= 1 km
 
-            if (distance > 1) {
-              const additionalDistance = Math.ceil((distance - 1) / 1);
-              shippingCost += additionalDistance * 2000;
-            }
-
-            document.getElementById('shippingCost').textContent = `Ongkir: Rp ${shippingCost.toLocaleString('id-ID')}`;
-          } else {
-            alert('Gagal menghitung ongkir, coba lagi.');
+          if (distance > 1) {
+            const additionalDistance = Math.ceil((distance - 1) / 1);
+            shippingCost += additionalDistance * 2000;
           }
-        }
-      );
+
+          document.getElementById('shippingCost').textContent = `Ongkir: Rp ${shippingCost.toLocaleString('id-ID')}`;
+        });
+      } else {
+        alert("Geolocation tidak didukung oleh browser ini.");
+      }
     }
 
     // Complete Order
     function completeOrder() {
-      if (!selectedLocation) {
-        alert('Harap tentukan lokasi pengiriman terlebih dahulu');
-        return;
-      }
-
-      const shippingCost = document.getElementById('shippingCost').textContent;
-      alert(`Pembelian selesai! Ongkir: ${shippingCost}`);
+      alert(`Pembelian selesai! Ongkir: ${document.getElementById('shippingCost').textContent}`);
       // Implement further order processing here
     }
-
-    // Load Google Maps
-    function loadScript(src) {
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      document.head.appendChild(script);
-    }
-    loadScript("https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap");
 
   </script>
 </body>
