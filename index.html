@@ -1,243 +1,153 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VL Online Shop</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #f5f7fa;
-    }
-
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f5f7fa; }
     header {
+      position: sticky;
+      top: 0;
       background: linear-gradient(to right, #003366, #0059b3);
       color: white;
-      padding: 1rem 1.5rem;
+      padding: 0.8rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
       z-index: 1000;
     }
-
-    header h1 {
-      margin: 0;
-      font-size: 1.3rem;
-    }
-
-    .search-container {
+    header h1 { margin: 0; font-size: 1.2rem; }
+    .search-wrapper {
       background: white;
-      padding: 0.8rem 1.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-
     .search-box input {
       width: 100%;
-      padding: 0.5rem;
-      border-radius: 6px;
+      padding: 0.6rem;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      font-size: 1rem;
     }
-
-    .cart-icon {
-      position: relative;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .cart-icon::after {
-      content: attr(data-count);
-      position: absolute;
-      top: -6px;
-      right: -8px;
-      background: red;
-      color: white;
-      font-size: 0.75rem;
-      border-radius: 50%;
-      padding: 0.25rem 0.5rem;
-      min-width: 20px;
-      text-align: center;
-    }
-
-    main {
-      padding: 1.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
     .products {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
+      padding: 1rem;
+      max-width: 1200px;
+      margin: auto;
     }
-
     .product {
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       padding: 1rem;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.3s ease;
-    }
-
-    .product:hover {
-      transform: translateY(-5px);
-    }
-
-    .product img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
       border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
     }
-
-    .product h3 {
-      margin: 0.5rem 0;
-      color: #003366;
-    }
-
-    .product p {
-      margin: 0.3rem 0;
-      font-size: 0.95rem;
-    }
-
-    .product .buttons {
-      margin-top: 0.5rem;
-    }
-
-    .product button, .product a.beli {
-      padding: 0.4rem 0.8rem;
-      border: none;
-      border-radius: 6px;
-      margin: 0.2rem 0.1rem;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: 0.3s ease;
-    }
-
-    .product button {
-      background: #0059b3;
-      color: white;
-    }
-
-    .product button:hover {
-      background: #003f7f;
-    }
-
-    .product a.beli {
-      background: #28a745;
-      color: white;
-      text-decoration: none;
-      display: inline-block;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    .badge {
+    .product.best-seller::before {
+      content: 'BEST SELLER';
       position: absolute;
       top: 10px;
-      left: -20px;
+      right: 10px;
       background: gold;
-      color: #000;
-      padding: 5px 20px;
-      transform: rotate(-45deg);
+      color: black;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+      border-radius: 5px;
       font-weight: bold;
-      font-size: 0.75rem;
     }
-
-    /* Cart as floating panel */
-    .cart {
+    .product img {
+      width: 100%; height: 150px; object-fit: cover; border-radius: 10px;
+    }
+    .product h3 { margin: 0.5rem 0; color: #003366; }
+    .product p { margin: 0.3rem 0; }
+    .buttons { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .product button, .beli {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 5px;
+      background: #0059b3;
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .product button:hover, .beli:hover {
+      background: #003366;
+      transform: scale(1.05);
+    }
+    .cart-icon {
+      position: relative;
+      display: inline-block;
+      font-size: 1.5rem;
+      cursor: pointer;
+      margin-left: 1rem;
+    }
+    .cart-icon::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -5px;
+      right: -10px;
+      background: red;
+      color: white;
+      font-size: 0.75rem;
+      border-radius: 50%;
+      padding: 0.2rem 0.4rem;
+    }
+    .cart-float {
       position: fixed;
-      top: 70px;
+      top: 80px;
       right: 20px;
       width: 300px;
-      max-height: 90vh;
+      max-height: 400px;
+      overflow-y: auto;
       background: white;
       padding: 1rem;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-      z-index: 999;
-      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      border-radius: 10px;
       display: none;
-      animation: slideIn 0.3s ease-in-out;
+      z-index: 2000;
     }
-
-    .cart h2 {
-      margin-top: 0;
-      color: #003366;
+    .cart-float h2 { margin-top: 0; font-size: 1.1rem; }
+    .cart-float ul { list-style: none; padding: 0; }
+    .cart-float li {
+      background: #eef3fb;
+      padding: 0.4rem;
+      border-radius: 8px;
+      margin-bottom: 0.4rem;
     }
-
-    .cart ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .cart li {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .cart button {
+    .cart-float button {
       margin-top: 1rem;
-      padding: 0.6rem;
       width: 100%;
+      padding: 0.5rem;
       background: #0059b3;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-    }
-
-    .cart button:hover:enabled {
-      background-color: #003f7f;
-    }
-
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    .cart-backdrop {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
-      z-index: 998;
-      display: none;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>VL Online Shop</h1>
-    <div class="cart-icon" id="cart-icon" data-count="0" onclick="toggleCart()">🛒</div>
+    <div class="cart-icon" onclick="toggleCart()" id="cart-icon" data-count="0">🛒</div>
   </header>
 
-  <div class="search-container">
+  <div class="search-wrapper">
     <div class="search-box">
       <input type="text" id="search" placeholder="Cari produk atau kategori...">
     </div>
   </div>
 
-  <main>
-    <section class="products" id="product-list"></section>
-  </main>
-
-  <div id="cart-backdrop" class="cart-backdrop" onclick="toggleCart()"></div>
-  <section class="cart" id="cart-section"></section>
+  <section class="products" id="product-list"></section>
+  <div class="cart-float" id="cart-section">
+    <h2>Keranjang</h2>
+    <ul id="cart-items"></ul>
+    <p id="cart-total"></p>
+    <button onclick="location.href='checkout.html'">Lanjut ke Checkout</button>
+  </div>
 
   <script>
     const products = [
@@ -246,6 +156,7 @@
         name: 'Kaos Polos Putih',
         category: 'Pakaian',
         bestSeller: true,
+        canAdd: true,
         price: 35000,
         description: 'Kaos berkualitas, nyaman dipakai.',
         image: 'https://via.placeholder.com/200x150?text=Kaos+Putih',
@@ -255,38 +166,40 @@
         id: 2,
         name: 'Celana Jeans',
         category: 'Pakaian',
+        bestSeller: false,
+        canAdd: false,
         price: 75000,
         description: 'Celana jeans pria model terbaru.',
-        image: 'https://down-id.img.susercontent.com/file/id-11134207-7qul8-lgd43ij3wejs61'
+        image: 'https://via.placeholder.com/200x150?text=Celana+Jeans'
       },
       {
         id: 3,
         name: 'Kemeja Flanel',
         category: 'Pakaian',
         bestSeller: true,
+        canAdd: true,
         price: 90000,
         description: 'Kemeja flanel dengan bahan lembut.',
-        image: 'https://down-id.img.susercontent.com/file/id-11134207-7qul8-lgd43ij3wejs61',
+        image: 'https://via.placeholder.com/200x150?text=Kemeja+Flanel',
         link: 'https://tokopedia.com/produk2'
       }
     ];
 
     let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
 
-    function renderProducts(filteredList = products) {
+    function renderProducts() {
       const container = document.getElementById('product-list');
       container.innerHTML = '';
-      filteredList.forEach(p => {
+      products.forEach(p => {
         const item = document.createElement('div');
-        item.className = 'product';
+        item.className = 'product' + (p.bestSeller ? ' best-seller' : '');
         item.innerHTML = `
-          ${p.bestSeller ? '<div class="badge">Best Seller</div>' : ''}
           <img src="${p.image}" alt="${p.name}">
           <h3>${p.name}</h3>
           <p>${p.description}</p>
-          <p><strong>Rp${p.price.toLocaleString()}</strong></p>
+          <p>Rp${p.price.toLocaleString()}</p>
           <div class="buttons">
-           <button onclick="addToCart(${p.id})">Tambah</button>
+            ${p.canAdd ? `<button onclick="addToCart(${p.id})">Tambah</button>` : ''}
             ${p.link ? `<a href="${p.link}" class="beli" target="_blank">Beli Sekarang</a>` : ''}
           </div>
         `;
@@ -303,47 +216,59 @@
 
     function saveCart() {
       localStorage.setItem('vl_cart', JSON.stringify(cart));
-      updateCartIcon();
       renderCart();
+      updateCartIcon();
     }
 
     function renderCart() {
-      const section = document.getElementById('cart-section');
-      section.innerHTML = '<h2>Keranjang</h2>';
-      const ul = document.createElement('ul');
-      ul.id = 'cart-items';
+      const items = document.getElementById('cart-items');
+      const totalBox = document.getElementById('cart-total');
+      items.innerHTML = '';
       let total = 0;
+
       Object.values(cart).forEach(item => {
         const li = document.createElement('li');
         li.textContent = `${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}`;
-        ul.appendChild(li);
+        items.appendChild(li);
         total += item.qty * item.price;
       });
-      section.appendChild(ul);
-      section.innerHTML += `<p>Total: Rp${total.toLocaleString()}</p>`;
-      section.innerHTML += `<button onclick="location.href='checkout.html'" ${total === 0 ? 'disabled' : ''}>Lanjut ke Checkout</button>`;
+
+      totalBox.textContent = `Total: Rp${total.toLocaleString()}`;
     }
 
     function updateCartIcon() {
-      const totalQty = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
-      document.getElementById('cart-icon').setAttribute('data-count', totalQty);
+      const cartCount = Object.values(cart).reduce((acc, item) => acc + item.qty, 0);
+      document.getElementById('cart-icon').setAttribute('data-count', cartCount);
     }
 
     function toggleCart() {
-      const cartPanel = document.getElementById('cart-section');
-      const backdrop = document.getElementById('cart-backdrop');
-      const visible = cartPanel.style.display === 'block';
-      cartPanel.style.display = visible ? 'none' : 'block';
-      backdrop.style.display = visible ? 'none' : 'block';
+      const cartEl = document.getElementById('cart-section');
+      cartEl.style.display = cartEl.style.display === 'none' || cartEl.style.display === '' ? 'block' : 'none';
     }
 
     document.getElementById('search').addEventListener('input', function () {
       const keyword = this.value.toLowerCase();
       const filtered = products.filter(p =>
         p.name.toLowerCase().includes(keyword) ||
-        p.category?.toLowerCase().includes(keyword)
+        p.category.toLowerCase().includes(keyword)
       );
-      renderProducts(filtered);
+      const container = document.getElementById('product-list');
+      container.innerHTML = '';
+      filtered.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'product' + (p.bestSeller ? ' best-seller' : '');
+        item.innerHTML = `
+          <img src="${p.image}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <p>Rp${p.price.toLocaleString()}</p>
+          <div class="buttons">
+            ${p.canAdd ? `<button onclick="addToCart(${p.id})">Tambah</button>` : ''}
+            ${p.link ? `<a href="${p.link}" class="beli" target="_blank">Beli Sekarang</a>` : ''}
+          </div>
+        `;
+        container.appendChild(item);
+      });
     });
 
     renderProducts();
