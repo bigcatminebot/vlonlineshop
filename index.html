@@ -100,7 +100,6 @@
       padding: 1.5rem;
       border-radius: 15px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      transition: all 0.4s ease;
       animation: slideUp 0.5s ease-in-out;
     }
 
@@ -136,11 +135,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: background 0.3s ease;
-    }
-
-    .cart li:hover {
-      background: #d8e8fc;
     }
 
     #cart-total {
@@ -150,7 +144,7 @@
       margin-top: 1rem;
     }
 
-    .cart button {
+    .cart button#checkout-btn {
       display: block;
       margin: 1rem auto 0;
       padding: 0.6rem 1.5rem;
@@ -160,11 +154,16 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, opacity 0.3s;
     }
 
-    .cart button:hover {
+    .cart button#checkout-btn:hover:enabled {
       background-color: #003f7f;
+    }
+
+    .cart button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .cart-icon {
@@ -208,7 +207,7 @@
       <h2>Keranjang</h2>
       <ul id="cart-items"></ul>
       <p id="cart-total"></p>
-      <a href="checkout.html"><button>Lanjut ke Checkout</button></a>
+      <button id="checkout-btn" onclick="location.href='checkout.html'">Lanjut ke Checkout</button>
     </section>
   </main>
 
@@ -267,15 +266,22 @@
     function renderCart() {
       const items = document.getElementById('cart-items');
       const totalBox = document.getElementById('cart-total');
+      const checkoutBtn = document.getElementById('checkout-btn');
+
       items.innerHTML = '';
       let total = 0;
+      let hasItems = false;
+
       Object.values(cart).forEach(item => {
         const li = document.createElement('li');
         li.textContent = `${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}`;
         items.appendChild(li);
         total += item.qty * item.price;
+        hasItems = true;
       });
+
       totalBox.textContent = `Total: Rp${total.toLocaleString()}`;
+      checkoutBtn.disabled = !hasItems;
     }
 
     function updateCartIcon() {
