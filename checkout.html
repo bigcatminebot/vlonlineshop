@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Checkout - VL Online Shop</title>
   <style>
     body {
@@ -83,12 +83,12 @@
 
     <div class="form-group">
       <label for="phone">No. HP / WhatsApp *</label>
-      <input type="tel" id="phone" placeholder="Contoh: 08123456789" required>
+      <input type="tel" id="phone" placeholder="Contoh: 08123456789" required />
     </div>
 
     <div class="form-group">
       <label for="voucher">Kode Voucher</label>
-      <input type="text" id="voucher" placeholder="Masukkan kode voucher (opsional)">
+      <input type="text" id="voucher" placeholder="Masukkan kode voucher (opsional)" />
       <div id="voucher-message" class="alert"></div>
     </div>
 
@@ -129,10 +129,9 @@
     }
 
     function validateVoucher(code) {
-      // Menambahkan diskon ongkir dengan nominal tetap
       const validVouchers = {
-        'ONGKIR5': 5000,  // Potongan ongkir Rp5.000
-        'ONGKIR10': 10000,  // Potongan ongkir Rp10.000
+        'ONGKIR5': 5000,
+        'ONGKIR10': 10000,
       };
 
       if (validVouchers[code]) {
@@ -144,94 +143,94 @@
     }
 
     function processCheckout() {
-  const address = document.getElementById('address').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const method = document.getElementById('method').value;
-  const voucherCode = document.getElementById('voucher').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const method = document.getElementById('method').value;
+      const voucherCode = document.getElementById('voucher').value.trim();
 
-  if (!address || !phone || !method) {
-    alert('Harap lengkapi semua kolom wajib.');
-    return;
-  }
+      if (!address || !phone || !method) {
+        alert('Harap lengkapi semua kolom wajib.');
+        return;
+      }
 
-  localStorage.setItem('vl_address', address);
-  localStorage.setItem('vl_phone', phone);
+      localStorage.setItem('vl_address', address);
+      localStorage.setItem('vl_phone', phone);
 
-  const total = calculateTotal();
+      const total = calculateTotal();
 
-  if (method === 'cod' && total > 100000) {
-    alert('COD tidak tersedia untuk total belanja di atas Rp100.000. Silakan pilih metode lain.');
-    return;
-  }
+      if (method === 'cod' && total > 100000) {
+        alert('COD tidak tersedia untuk total belanja di atas Rp100.000. Silakan pilih metode lain.');
+        return;
+      }
 
-  let shippingDiscount = 0;
-  if (voucherCode !== '') {
-    const discount = validateVoucher(voucherCode);
-    if (discount) {
-      shippingDiscount = discount;
-      document.getElementById('voucher-message').textContent = `🎉 Voucher diterapkan! Anda mendapatkan potongan ongkir Rp${discount.toLocaleString()}`;
-    } else {
-      document.getElementById('voucher-message').textContent = '';
-      return; // hentikan proses jika voucher salah
+      let shippingDiscount = 0;
+      if (voucherCode !== '') {
+        const discount = validateVoucher(voucherCode);
+        if (discount) {
+          shippingDiscount = discount;
+          document.getElementById('voucher-message').textContent = `🎉 Voucher diterapkan! Anda mendapatkan potongan ongkir Rp${discount.toLocaleString()}`;
+        } else {
+          document.getElementById('voucher-message').textContent = '';
+          return;
+        }
+      } else {
+        document.getElementById('voucher-message').textContent = '';
+      }
+
+      const storeLat = -1.6409491;
+      const storeLon = 105.771176;
+
+      function continueCheckoutWithShipping(distanceMeters = 10000) {
+        const baseShippingCost = getShippingCost(distanceMeters);
+        const finalShippingCost = Math.max(0, baseShippingCost - shippingDiscount);
+
+        let message = '🛒 Rincian Pesanan:\n';
+        Object.values(cart).forEach(item => {
+          message += `📦 ${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
+        });
+        message += `💸 Total Belanja: Rp${total.toLocaleString()}\n`;
+        message += `🚚 Ongkir: Rp${finalShippingCost.toLocaleString()}\n`;
+        if (voucherCode !== '') {
+          message += `🎟️ Voucher: ${voucherCode.toUpperCase()} (Potongan Ongkir Rp${shippingDiscount.toLocaleString()})\n`;
+        }
+        message += `🏠 Alamat: ${address}\n📱 No HP: ${phone}\n💳 Metode: ${method.toUpperCase()}`;
+
+        if (confirm('Lanjut ke halaman konfirmasi?')) {
+          localStorage.removeItem('vl_cart'); // Hapus cart setelah checkout
+          window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
+        }
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const userLat = pos.coords.latitude;
+          const userLon = pos.coords.longitude;
+          const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
+          continueCheckoutWithShipping(distance);
+        }, err => {
+          alert('⚠️ Gagal mendapatkan lokasi. Silakan aktifkan akses lokasi di browser Anda agar ongkir dihitung otomatis.');
+          return;
+        });
+      } else {
+        alert('⚠️ Browser Anda tidak mendukung akses lokasi. Gunakan browser lain atau aktifkan lokasi.');
+        return;
+      }
     }
-  } else {
-    document.getElementById('voucher-message').textContent = '';
-  }
 
-  const storeLat = -1.6409491;
-  const storeLon = 105.771176;
-
-  function continueCheckoutWithShipping(distanceMeters = 10000) {
-    const baseShippingCost = getShippingCost(distanceMeters);
-    const finalShippingCost = Math.max(0, baseShippingCost - shippingDiscount);
-
-    let message = '🛒 Rincian Pesanan:\n';
-    Object.values(cart).forEach(item => {
-      message += `📦 ${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
-    });
-    message += `💸 Total Belanja: Rp${total.toLocaleString()}\n`;
-    message += `🚚 Ongkir: Rp${finalShippingCost.toLocaleString()}\n`;
-    if (voucherCode !== '') {
-      message += `🎟️ Voucher: ${voucherCode.toUpperCase()} (Potongan Ongkir Rp${shippingDiscount.toLocaleString()})\n`;
-    }
-    message += `🏠 Alamat: ${address}\n📱 No HP: ${phone}\n💳 Metode: ${method.toUpperCase()}`;
-
-    if (confirm('Lanjut ke halaman konfirmasi?')) {
-      window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
-    }
-  }
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const userLat = pos.coords.latitude;
-      const userLon = pos.coords.longitude;
-      const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
-      continueCheckoutWithShipping(distance);
-    }, err => {
-      alert('⚠️ Gagal mendapatkan lokasi. Silakan aktifkan akses lokasi di browser Anda agar ongkir dihitung otomatis.');
-      return; // tidak lanjut proses jika lokasi gagal
-    });
-  } else {
-    alert('⚠️ Browser Anda tidak mendukung akses lokasi. Gunakan browser lain atau aktifkan lokasi.');
-    return;
-  }
-}
-
-    // Fungsi menghitung jarak
     function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000;  // Radius of the earth in meters
+      const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;  // Distance in meters
+      return R * c;
     }
 
-    // Fungsi menghitung ongkos kirim
     function getShippingCost(distance) {
-      return 5000 + Math.floor(distance / 1000) * 2000;
+      if (distance <= 1000) return 5000;
+      return 5000 + Math.ceil((distance - 1000) / 1000) * 2000;
     }
 
     displayOrderSummary();
