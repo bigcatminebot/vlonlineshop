@@ -55,10 +55,6 @@
     #manualLocation {
       margin-top: 20px;
     }
-    label, input {
-      display: block;
-      margin: 8px 0;
-    }
     button {
       margin-top: 10px;
       padding: 8px 12px;
@@ -84,12 +80,8 @@
     </div>
 
     <div id="manualLocation">
-      <h3>Atau tentukan lokasi secara manual:</h3>
-      <label for="lat">Latitude:</label>
-      <input type="number" id="lat" step="any">
-      <label for="lng">Longitude:</label>
-      <input type="number" id="lng" step="any">
-      <button onclick="useManualLocation()">Gunakan Lokasi Manual</button>
+      <h3>Atau tentukan lokasi secara manual dengan klik peta:</h3>
+      <button onclick="enableManualMarker()">Aktifkan Penanda Manual</button>
     </div>
 
     <div id="map"></div>
@@ -108,6 +100,8 @@
     const storeLng = 105.771176;
     let totalHarga = 0;
     let map;
+    let manualMarker;
+    let allowManual = false;
 
     function calculateDistance(userLat, userLng) {
       const R = 6371e3;
@@ -129,8 +123,16 @@
         zoom: 15,
         center: { lat: userLat, lng: userLng },
       });
+
       new google.maps.Marker({ position: { lat: storeLat, lng: storeLng }, map, label: "Toko" });
       new google.maps.Marker({ position: { lat: userLat, lng: userLng }, map, label: "Anda" });
+
+      map.addListener("click", function(e) {
+        if (!allowManual) return;
+        if (manualMarker) manualMarker.setMap(null);
+        manualMarker = new google.maps.Marker({ position: e.latLng, map, label: "Anda" });
+        hitungOngkir(e.latLng.lat(), e.latLng.lng());
+      });
     }
 
     function hitungOngkir(userLat, userLng) {
@@ -145,8 +147,11 @@
 
       shippingEl.textContent = shipping.toLocaleString('id-ID');
       totalEl.textContent = (totalHarga + shipping).toLocaleString('id-ID');
+    }
 
-      tampilkanPeta(userLat, userLng);
+    function enableManualMarker() {
+      allowManual = true;
+      alert("Klik pada peta untuk memilih lokasi Anda.");
     }
 
     function renderCart(cart) {
@@ -162,21 +167,14 @@
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
           hitungOngkir(position.coords.latitude, position.coords.longitude);
+          tampilkanPeta(position.coords.latitude, position.coords.longitude);
         }, () => {
-          alert("Gagal mendapatkan lokasi Anda. Silakan masukkan lokasi manual.");
+          alert("Gagal mendapatkan lokasi Anda. Silakan pilih lokasi di peta.");
+          tampilkanPeta(storeLat, storeLng);
         });
       } else {
-        alert("Geolokasi tidak didukung browser. Silakan masukkan lokasi manual.");
-      }
-    }
-
-    function useManualLocation() {
-      const lat = parseFloat(document.getElementById('lat').value);
-      const lng = parseFloat(document.getElementById('lng').value);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        hitungOngkir(lat, lng);
-      } else {
-        alert("Masukkan koordinat yang valid.");
+        alert("Geolokasi tidak didukung browser. Silakan pilih lokasi di peta.");
+        tampilkanPeta(storeLat, storeLng);
       }
     }
 
