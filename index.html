@@ -267,9 +267,36 @@
 
     .quantity-controls {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
+      width: 120px;
       margin-top: 0.5rem;
+    }
+
+    .quantity-controls button {
+      font-size: 1.5rem;
+      background: #f0f0f0;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .quantity-controls button:hover {
+      background: #003366;
+      color: white;
+    }
+
+    .product-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+    }
+
+    .product-buttons button, .product-buttons .buy-now {
+      width: 48%;
+      text-align: center;
     }
   </style>
 </head>
@@ -298,14 +325,35 @@
   <div class="cart-icon" id="cart-icon" onclick="toggleCartPopup()" data-count="0">🛒</div>
 
   <script>
-    const products = Array.from({ length: 50 }, (_, i) => ({
-      id: i + 1,
-      name: `Produk ${String.fromCharCode(65 + (i % 26))}`,
-      price: 15000 + Math.floor(Math.random() * 5000),
-      description: `Deskripsi produk ${String.fromCharCode(65 + (i % 26))}`,
-      image: 'https://via.placeholder.com/200x150?text=Produk+' + (i + 1),
-      bestSeller: false  // Default: produk tidak memiliki badge "Best Seller"
-    }));
+    const products = [
+      {
+        id: 1,
+        name: 'Produk A',
+        price: 10000,
+        description: 'Deskripsi produk A yang luar biasa',
+        image: 'https://via.placeholder.com/200x150?text=Produk+A',
+        href: 'https://example.com/product/1',
+        bestSeller: false
+      },
+      {
+        id: 2,
+        name: 'Produk B',
+        price: 20000,
+        description: 'Deskripsi produk B yang hebat',
+        image: 'https://via.placeholder.com/200x150?text=Produk+B',
+        href: 'https://example.com/product/2',
+        bestSeller: true
+      },
+      {
+        id: 3,
+        name: 'Produk C',
+        price: 30000,
+        description: 'Deskripsi produk C yang sangat menarik',
+        image: 'https://via.placeholder.com/200x150?text=Produk+C',
+        href: 'https://example.com/product/3',
+        bestSeller: false
+      }
+    ];
 
     let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
 
@@ -323,72 +371,73 @@
           <h3>${p.name}</h3>
           <p>${p.description}</p>
           <p class="price">Rp${p.price.toLocaleString()}</p>
-          <button onclick="addToCart(${p.id})">Tambah</button>
-          <a href="https://example.com/${p.id}" class="buy-now">BELI SEKARANG</a>
-        `;
-        container.appendChild(item);
-      });
+<div class="product-buttons">
+<button onclick="addToCart(${p.id})">Tambah</button>
+<a href="${p.href}" class="buy-now">BELI SEKARANG</a>
+</div>
+`;
+container.appendChild(item);
+});
+}
+function addToCart(id) {
+  if (!cart[id]) {
+    cart[id] = { qty: 1 };
+  } else {
+    cart[id].qty += 1;
+  }
+  saveCart();
+}
+
+function saveCart() {
+  localStorage.setItem('vl_cart', JSON.stringify(cart));
+  updateCartIcon();
+}
+
+function updateCartIcon() {
+  const count = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
+  document.getElementById('cart-icon').setAttribute('data-count', count);
+  renderCart();
+}
+
+function renderCart() {
+  const cartItems = document.getElementById('cart-items');
+  const totalBox = document.getElementById('cart-total');
+  cartItems.innerHTML = '';
+  let total = 0;
+  let hasItems = false;
+  Object.keys(cart).forEach(id => {
+    const product = products.find(p => p.id === parseInt(id));
+    if (cart[id].qty > 0) {
+      hasItems = true;
+      const li = document.createElement('li');
+      li.innerHTML = `
+        ${product.name} - ${cart[id].qty} x Rp${product.price.toLocaleString()}
+        <div class="quantity-controls">
+          <button onclick="updateQuantity(${id}, -1)">-</button>
+          <button onclick="updateQuantity(${id}, 1)">+</button>
+        </div>
+      `;
+      cartItems.appendChild(li);
+      total += cart[id].qty * product.price;
     }
+  });
 
-    function addToCart(id) {
-      const prod = products.find(p => p.id === id);
-      if (!cart[id]) cart[id] = { ...prod, qty: 1 };
-      else cart[id].qty++;
-      saveCart();
-    }
+  totalBox.innerText = hasItems ? `Total: Rp${total.toLocaleString()}` : '';
+  document.getElementById('checkout-btn').disabled = !hasItems;
+}
 
-    function saveCart() {
-      localStorage.setItem('vl_cart', JSON.stringify(cart));
-      renderCart();
-      renderProducts();
-      updateCartIcon();
-    }
+function updateQuantity(id, change) {
+  if (!cart[id]) return;
+  cart[id].qty = Math.max(cart[id].qty + change, 0);
+  saveCart();
+}
 
-    function renderCart() {
-      const items = document.getElementById('cart-items');
-      const totalBox = document.getElementById('cart-total');
-      const checkoutBtn = document.getElementById('checkout-btn');
-      items.innerHTML = '';
-      let total = 0;
-      let hasItems = false;
+function toggleCartPopup() {
+  const popup = document.getElementById('cart-popup');
+  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+}
 
-      Object.values(cart).forEach(item => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          ${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}
-        `;
-        items.appendChild(li);
-        total += item.qty * item.price;
-        hasItems = true;
-      });
-
-      totalBox.textContent = `Total: Rp${total.toLocaleString()}`;
-      checkoutBtn.disabled = !hasItems;
-    }
-
-    function updateCartIcon() {
-      const cartCount = Object.values(cart).reduce((acc, item) => acc + item.qty, 0);
-      const cartIcon = document.getElementById('cart-icon');
-      cartIcon.setAttribute('data-count', cartCount);
-    }
-
-    function toggleCartPopup() {
-      const cartPopup = document.getElementById('cart-popup');
-      cartPopup.style.display = cartPopup.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function searchProduct() {
-      const keyword = document.getElementById('search').value.toLowerCase();
-      const filtered = products.filter(p =>
-        p.name.toLowerCase().includes(keyword) ||
-        p.description.toLowerCase().includes(keyword)
-      );
-      renderProducts(filtered);
-    }
-
-    renderProducts();
-    renderCart();
-    updateCartIcon();
-  </script>
-</body>
-</html>
+renderProducts();
+</script> 
+</body> 
+</html> 
