@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VL Online Shop - Beranda</title>
+  <title>VL Online Shop</title>
   <style>
     * {
       box-sizing: border-box;
@@ -16,41 +16,58 @@
     }
 
     header {
-      position: sticky;
-      top: 0;
       background: linear-gradient(to right, #003366, #0059b3);
       color: white;
       padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: sticky;
+      top: 0;
       z-index: 1000;
     }
 
     header h1 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
     }
 
-    .search-bar {
-      background: #fff;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-      display: flex;
-      justify-content: center;
+    .search-container {
+      background: white;
+      padding: 0.8rem 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .search-bar input {
+    .search-box input {
       width: 100%;
-      max-width: 600px;
-      padding: 0.6rem 1rem;
+      padding: 0.5rem;
+      border-radius: 6px;
       border: 1px solid #ccc;
-      border-radius: 10px;
       font-size: 1rem;
     }
 
+    .cart-icon {
+      position: relative;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .cart-icon::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      background: red;
+      color: white;
+      font-size: 0.75rem;
+      border-radius: 50%;
+      padding: 0.25rem 0.5rem;
+      min-width: 20px;
+      text-align: center;
+    }
+
     main {
-      padding: 1rem;
+      padding: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -59,16 +76,16 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
-      margin-top: 2rem;
     }
 
     .product {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       padding: 1rem;
-      transition: transform 0.3s ease;
       position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease;
     }
 
     .product:hover {
@@ -89,133 +106,117 @@
 
     .product p {
       margin: 0.3rem 0;
+      font-size: 0.95rem;
+    }
+
+    .product .buttons {
+      margin-top: 0.5rem;
+    }
+
+    .product button, .product a.beli {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 6px;
+      margin: 0.2rem 0.1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.3s ease;
     }
 
     .product button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 5px;
       background: #0059b3;
       color: white;
-      cursor: pointer;
-      margin: 0.2rem;
-      transition: background 0.3s;
     }
 
-    .product button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    .product button:hover {
+      background: #003f7f;
     }
 
-    .product button:hover:enabled {
-      background: #003366;
+    .product a.beli {
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
 
     .badge {
       position: absolute;
       top: 10px;
-      right: 10px;
+      left: -20px;
       background: gold;
-      color: #333;
+      color: #000;
+      padding: 5px 20px;
+      transform: rotate(-45deg);
       font-weight: bold;
-      padding: 5px 10px;
-      border-radius: 15px;
-      font-size: 0.8rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      font-size: 0.75rem;
     }
 
+    /* Cart as floating panel */
     .cart {
-      margin-top: 2rem;
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      width: 300px;
+      max-height: 90vh;
       background: white;
-      padding: 1.5rem;
-      border-radius: 15px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      animation: slideUp 0.5s ease-in-out;
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      z-index: 999;
+      overflow-y: auto;
+      display: none;
+      animation: slideIn 0.3s ease-in-out;
     }
 
     .cart h2 {
-      text-align: center;
+      margin-top: 0;
       color: #003366;
-      margin-bottom: 1rem;
     }
 
     .cart ul {
       list-style: none;
       padding: 0;
-      max-height: 300px;
-      overflow-y: auto;
+      margin: 0;
     }
 
     .cart li {
-      background: #eef3fb;
-      margin-bottom: 0.6rem;
-      padding: 0.6rem 1rem;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
     }
 
-    #cart-total {
-      font-weight: bold;
-      font-size: 1.1rem;
-      text-align: right;
+    .cart button {
       margin-top: 1rem;
-    }
-
-    .cart button#checkout-btn {
-      display: block;
-      margin: 1rem auto 0;
-      padding: 0.6rem 1.5rem;
-      font-size: 1rem;
-      background-color: #0059b3;
+      padding: 0.6rem;
+      width: 100%;
+      background: #0059b3;
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.3s ease, opacity 0.3s;
     }
 
-    .cart button#checkout-btn:hover:enabled {
+    .cart button:hover:enabled {
       background-color: #003f7f;
     }
 
-    .cart button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
 
-    .cart-icon {
-      position: relative;
-      display: inline-block;
-      font-size: 1.5rem;
-      cursor: pointer;
-      margin-left: auto;
-    }
-
-    .cart-icon::after {
-      content: attr(data-count);
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background: red;
-      color: white;
-      font-size: 0.8rem;
-      border-radius: 50%;
-      padding: 0.3rem;
-      min-width: 20px;
-      text-align: center;
+    .cart-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 998;
+      display: none;
     }
   </style>
 </head>
@@ -225,55 +226,57 @@
     <div class="cart-icon" id="cart-icon" data-count="0" onclick="toggleCart()">🛒</div>
   </header>
 
-  <div class="search-bar">
-    <input type="text" id="search" placeholder="Cari produk, kategori, atau toko...">
+  <div class="search-container">
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Cari produk atau kategori...">
+    </div>
   </div>
 
   <main>
     <section class="products" id="product-list"></section>
-    <section class="cart" id="cart-section" style="display: none;">
-      <h2>Keranjang</h2>
-      <ul id="cart-items"></ul>
-      <p id="cart-total"></p>
-      <button id="checkout-btn" onclick="location.href='checkout.html'">Lanjut ke Checkout</button>
-    </section>
   </main>
+
+  <div id="cart-backdrop" class="cart-backdrop" onclick="toggleCart()"></div>
+  <section class="cart" id="cart-section"></section>
 
   <script>
     const products = [
       {
         id: 1,
-        name: 'Kaos Polos Hitam',
-        price: 50000,
-        description: 'Pakaian kasual cocok untuk sehari-hari.',
-        image: 'https://via.placeholder.com/200x150?text=Kaos+Polos',
-        bestSeller: true
+        name: 'Kaos Polos Putih',
+        category: 'Pakaian',
+        bestSeller: true,
+        price: 35000,
+        description: 'Kaos berkualitas, nyaman dipakai.',
+        image: 'https://via.placeholder.com/200x150?text=Kaos+Putih',
+        link: 'https://shopee.co.id/produk1'
       },
       {
         id: 2,
-        name: 'Celana Jeans Slim Fit',
-        price: 120000,
-        description: 'Celana jeans nyaman dan stylish.',
-        image: 'https://via.placeholder.com/200x150?text=Jeans',
-        bestSeller: false
+        name: 'Celana Jeans',
+        category: 'Pakaian',
+        price: 75000,
+        description: 'Celana jeans pria model terbaru.',
+        image: 'https://via.placeholder.com/200x150?text=Celana+Jeans'
       },
       {
         id: 3,
-        name: 'Hoodie VL Premium',
-        price: 150000,
-        description: 'Hoodie tebal dan hangat, cocok untuk musim dingin.',
-        image: 'https://via.placeholder.com/200x150?text=Hoodie',
-        bestSeller: true
+        name: 'Kemeja Flanel',
+        category: 'Pakaian',
+        bestSeller: true,
+        price: 90000,
+        description: 'Kemeja flanel dengan bahan lembut.',
+        image: 'https://via.placeholder.com/200x150?text=Kemeja+Flanel',
+        link: 'https://tokopedia.com/produk2'
       }
     ];
 
     let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
 
-    function renderProducts() {
+    function renderProducts(filteredList = products) {
       const container = document.getElementById('product-list');
       container.innerHTML = '';
-      products.forEach(p => {
-        const qtyInCart = cart[p.id]?.qty || 0;
+      filteredList.forEach(p => {
         const item = document.createElement('div');
         item.className = 'product';
         item.innerHTML = `
@@ -281,9 +284,11 @@
           <img src="${p.image}" alt="${p.name}">
           <h3>${p.name}</h3>
           <p>${p.description}</p>
-          <p>Rp${p.price.toLocaleString()}</p>
-          <button onclick="addToCart(${p.id})">Tambah</button>
-          <button onclick="removeFromCart(${p.id})" ${qtyInCart === 0 ? 'disabled' : ''}>Kurangi</button>
+          <p><strong>Rp${p.price.toLocaleString()}</strong></p>
+          <div class="buttons">
+            <button onclick="addToCart(${p.id})">Tambah</button>
+            ${p.link ? `<a href="${p.link}" class="beli" target="_blank">Beli Sekarang</a>` : ''}
+          </div>
         `;
         container.appendChild(item);
       });
@@ -296,80 +301,49 @@
       saveCart();
     }
 
-    function removeFromCart(id) {
-      if (cart[id]) {
-        if (cart[id].qty === 1) {
-          if (confirm("Yakin menghapus produk dari keranjang?")) {
-            delete cart[id];
-          }
-        } else {
-          cart[id].qty--;
-        }
-        saveCart();
-      }
-    }
-
     function saveCart() {
       localStorage.setItem('vl_cart', JSON.stringify(cart));
-      renderCart();
-      renderProducts();
       updateCartIcon();
+      renderCart();
     }
 
     function renderCart() {
-      const items = document.getElementById('cart-items');
-      const totalBox = document.getElementById('cart-total');
-      const checkoutBtn = document.getElementById('checkout-btn');
-      items.innerHTML = '';
+      const section = document.getElementById('cart-section');
+      section.innerHTML = '<h2>Keranjang</h2>';
+      const ul = document.createElement('ul');
+      ul.id = 'cart-items';
       let total = 0;
-      let hasItems = false;
-
       Object.values(cart).forEach(item => {
         const li = document.createElement('li');
         li.textContent = `${item.name} x ${item.qty} - Rp${(item.qty * item.price).toLocaleString()}`;
-        items.appendChild(li);
+        ul.appendChild(li);
         total += item.qty * item.price;
-        hasItems = true;
       });
-
-      totalBox.textContent = `Total: Rp${total.toLocaleString()}`;
-      checkoutBtn.disabled = !hasItems;
+      section.appendChild(ul);
+      section.innerHTML += `<p>Total: Rp${total.toLocaleString()}</p>`;
+      section.innerHTML += `<button onclick="location.href='checkout.html'" ${total === 0 ? 'disabled' : ''}>Lanjut ke Checkout</button>`;
     }
 
     function updateCartIcon() {
-      const cartCount = Object.values(cart).reduce((acc, item) => acc + item.qty, 0);
-      const cartIcon = document.getElementById('cart-icon');
-      cartIcon.setAttribute('data-count', cartCount);
+      const totalQty = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
+      document.getElementById('cart-icon').setAttribute('data-count', totalQty);
     }
 
     function toggleCart() {
-      const cartSection = document.getElementById('cart-section');
-      cartSection.style.display = cartSection.style.display === 'none' ? 'block' : 'none';
+      const cartPanel = document.getElementById('cart-section');
+      const backdrop = document.getElementById('cart-backdrop');
+      const visible = cartPanel.style.display === 'block';
+      cartPanel.style.display = visible ? 'none' : 'block';
+      backdrop.style.display = visible ? 'none' : 'block';
     }
 
     document.getElementById('search').addEventListener('input', function () {
       const keyword = this.value.toLowerCase();
       const filtered = products.filter(p =>
         p.name.toLowerCase().includes(keyword) ||
-        p.description.toLowerCase().includes(keyword)
+        p.category?.toLowerCase().includes(keyword)
       );
-      const container = document.getElementById('product-list');
-      container.innerHTML = '';
-      filtered.forEach(p => {
-        const qtyInCart = cart[p.id]?.qty || 0;
-        const item = document.createElement('div');
-        item.className = 'product';
-        item.innerHTML = `
-          ${p.bestSeller ? '<div class="badge">Best Seller</div>' : ''}
-          <img src="${p.image}" alt="${p.name}">
-          <h3>${p.name}</h3>
-          <p>${p.description}</p>
-          <p>Rp${p.price.toLocaleString()}</p>
-          <button onclick="addToCart(${p.id})">Tambah</button>
-          <button onclick="removeFromCart(${p.id})" ${qtyInCart === 0 ? 'disabled' : ''}>Kurangi</button>
-        `;
-        container.appendChild(item);
-      });
+      renderProducts(filtered);
     });
 
     renderProducts();
