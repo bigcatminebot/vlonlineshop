@@ -24,6 +24,17 @@
     header span {
       color: #e0b973;
     }
+    .search-bar {
+      margin: 20px;
+      text-align: center;
+    }
+    .search-bar input {
+      padding: 10px;
+      font-size: 16px;
+      width: 70%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
     .container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -55,6 +66,11 @@
     .product p {
       color: #e0b973;
       font-size: 16px;
+    }
+    .product .desc {
+      color: #666;
+      font-size: 14px;
+      margin-top: 10px;
     }
     .product button {
       margin-top: 10px;
@@ -89,6 +105,10 @@
     </div>
   </header>
 
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Cari produk..." oninput="filterProducts()">
+  </div>
+
   <div class="container" id="productContainer">
     <!-- Produk akan ditambahkan di sini -->
   </div>
@@ -97,24 +117,36 @@
 
   <script>
     const products = [
-      { id: 1, name: "Produk A", price: 50000, image: "https://via.placeholder.com/300x200?text=Produk+A" },
-      { id: 2, name: "Produk B", price: 75000, image: "https://via.placeholder.com/300x200?text=Produk+B" },
-      { id: 3, name: "Produk C", price: 100000, image: "https://via.placeholder.com/300x200?text=Produk+C" },
-      { id: 4, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D" },
+      { id: 1, name: "Produk A", price: 50000, image: "https://via.placeholder.com/300x200?text=Produk+A", description: "Deskripsi singkat Produk A" },
+      { id: 2, name: "Produk B", price: 75000, image: "https://via.placeholder.com/300x200?text=Produk+B", description: "Deskripsi singkat Produk B" },
+      { id: 3, name: "Produk C", price: 100000, image: "https://via.placeholder.com/300x200?text=Produk+C", description: "Deskripsi singkat Produk C" },
+      { id: 4, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 5, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 6, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 7, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 8, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 9, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 10, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 11, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 12, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 13, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 14, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 15, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
     ];
 
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-    function renderProducts() {
+    function renderProducts(filteredProducts) {
       const productContainer = document.getElementById('productContainer');
       productContainer.innerHTML = '';
-      products.forEach(product => {
+      filteredProducts.forEach(product => {
         const productElement = document.createElement('div');
         productElement.classList.add('product');
         productElement.innerHTML = `
           <img src="${product.image}" alt="${product.name}">
           <h3>${product.name}</h3>
           <p>Rp ${product.price.toLocaleString('id-ID')}</p>
+          <p class="desc">${product.description}</p>
           <button onclick="addToCart(${product.id})">Tambah ke Keranjang</button>
         `;
         productContainer.appendChild(productElement);
@@ -140,12 +172,21 @@
       cartCount.textContent = cart.reduce((acc, item) => acc + item.quantity, 0);
     }
 
+    function filterProducts() {
+      const searchInput = document.getElementById('searchInput').value.toLowerCase();
+      const filteredProducts = products.filter(product => 
+        product.name.toLowerCase().includes(searchInput) || product.description.toLowerCase().includes(searchInput)
+      );
+      renderProducts(filteredProducts);
+    }
+
     function goToCart() {
       const cartData = encodeURIComponent(JSON.stringify(cart));
       window.location.href = `pembayaran.html?cart=${cartData}`;
     }
 
-    renderProducts();
+    // Initial render
+    renderProducts(products);
     updateCartCount();
   </script>
 </body>
