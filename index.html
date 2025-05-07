@@ -6,10 +6,10 @@
   <title>VL ONLINE SHOP</title>
   <style>
     body {
-      margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f7f5f2;
       color: #333;
+      margin: 0;
     }
     header {
       background-color: #1a1a1a;
@@ -20,6 +20,9 @@
       align-items: center;
       font-size: 24px;
       font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
     header span {
       color: #e0b973;
@@ -30,164 +33,186 @@
     }
     .search-bar input {
       padding: 10px;
+      width: 80%;
       font-size: 16px;
-      width: 70%;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-    .container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    .product-list {
+      display: flex;
+      flex-wrap: wrap;
       gap: 20px;
       padding: 20px;
+      justify-content: center;
     }
     .product {
       background: white;
-      padding: 20px;
+      padding: 15px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 250px;
       text-align: center;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s;
     }
     .product:hover {
-      transform: scale(1.05);
+      transform: translateY(-5px);
     }
     .product img {
       width: 100%;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 8px;
+      border-radius: 6px;
     }
-    .product h3 {
+    .product h4 {
       margin: 10px 0;
-      font-size: 18px;
       color: #1a1a1a;
     }
     .product p {
-      color: #e0b973;
-      font-size: 16px;
-    }
-    .product .desc {
-      color: #666;
+      color: #888;
       font-size: 14px;
-      margin-top: 10px;
+    }
+    .product .price {
+      font-size: 18px;
+      font-weight: bold;
+      color: #e0b973;
+      margin: 10px 0;
     }
     .product button {
-      margin-top: 10px;
-      padding: 8px 12px;
       background-color: #1a1a1a;
       color: white;
+      padding: 10px 20px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
     .product button:hover {
       background-color: #e0b973;
     }
-    .cart {
-      background-color: #1a1a1a;
-      color: white;
-      padding: 10px;
+    .cart-summary {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      border-radius: 50%;
-      font-size: 20px;
+      background-color: #1a1a1a;
+      color: white;
+      padding: 15px;
+      border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cart-summary span {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+    .cart-summary i {
+      font-size: 24px;
     }
   </style>
 </head>
 <body>
+
   <header>
     <div>🛍️ <span>VL ONLINE SHOP</span></div>
-    <div>
-      <button onclick="goToCart()">Keranjang <span id="cartCount">0</span> item</button>
-    </div>
   </header>
 
   <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Cari produk..." oninput="filterProducts()">
+    <input type="text" id="searchInput" placeholder="Cari produk..." onkeyup="filterProducts()">
   </div>
 
-  <div class="container" id="productContainer">
-    <!-- Produk akan ditambahkan di sini -->
+  <div class="product-list" id="productList">
+    <!-- Produk akan ditampilkan di sini -->
   </div>
 
-  <div class="cart" onclick="goToCart()">🛒</div>
+  <div class="cart-summary" onclick="goToCheckout()">
+    <span>Keranjang</span>
+    <i>🛒</i>
+    <span id="cartCount">0</span>
+  </div>
 
   <script>
+    // Sample Product Data
     const products = [
-      { id: 1, name: "Produk A", price: 50000, image: "https://via.placeholder.com/300x200?text=Produk+A", description: "Deskripsi singkat Produk A" },
-      { id: 2, name: "Produk B", price: 75000, image: "https://via.placeholder.com/300x200?text=Produk+B", description: "Deskripsi singkat Produk B" },
-      { id: 3, name: "Produk C", price: 100000, image: "https://via.placeholder.com/300x200?text=Produk+C", description: "Deskripsi singkat Produk C" },
-      { id: 4, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 5, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 6, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 7, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 8, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 9, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 10, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 11, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 12, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 13, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 14, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
-      { id: 15, name: "Produk D", price: 150000, image: "https://via.placeholder.com/300x200?text=Produk+D", description: "Deskripsi singkat Produk D" },
+      { id: 1, name: 'Produk 1', price: 50000, description: 'Deskripsi singkat produk 1', image: 'https://via.placeholder.com/250x150' },
+      { id: 2, name: 'Produk 2', price: 75000, description: 'Deskripsi singkat produk 2', image: 'https://via.placeholder.com/250x150' },
+      { id: 3, name: 'Produk 3', price: 100000, description: 'Deskripsi singkat produk 3', image: 'https://via.placeholder.com/250x150' },
+      { id: 4, name: 'Produk 4', price: 125000, description: 'Deskripsi singkat produk 4', image: 'https://via.placeholder.com/250x150' },
     ];
 
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    // Initialize cart
+    let cart = [];
 
-    function renderProducts(filteredProducts) {
-      const productContainer = document.getElementById('productContainer');
-      productContainer.innerHTML = '';
+    // Render products
+    function renderProducts() {
+      const productList = document.getElementById('productList');
+      productList.innerHTML = ''; // Clear existing products
+      products.forEach(product => {
+        const productElement = document.createElement('div');
+        productElement.classList.add('product');
+        productElement.innerHTML = `
+          <img src="${product.image}" alt="${product.name}">
+          <h4>${product.name}</h4>
+          <p>${product.description}</p>
+          <div class="price">Rp ${product.price.toLocaleString('id-ID')}</div>
+          <button onclick="addToCart(${product.id})">Tambah ke Keranjang</button>
+        `;
+        productList.appendChild(productElement);
+      });
+    }
+
+    // Filter products based on search input
+    function filterProducts() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filteredProducts = products.filter(product => product.name.toLowerCase().includes(query));
+      renderFilteredProducts(filteredProducts);
+    }
+
+    // Render filtered products
+    function renderFilteredProducts(filteredProducts) {
+      const productList = document.getElementById('productList');
+      productList.innerHTML = ''; // Clear existing products
       filteredProducts.forEach(product => {
         const productElement = document.createElement('div');
         productElement.classList.add('product');
         productElement.innerHTML = `
           <img src="${product.image}" alt="${product.name}">
-          <h3>${product.name}</h3>
-          <p>Rp ${product.price.toLocaleString('id-ID')}</p>
-          <p class="desc">${product.description}</p>
+          <h4>${product.name}</h4>
+          <p>${product.description}</p>
+          <div class="price">Rp ${product.price.toLocaleString('id-ID')}</div>
           <button onclick="addToCart(${product.id})">Tambah ke Keranjang</button>
         `;
-        productContainer.appendChild(productElement);
+        productList.appendChild(productElement);
       });
     }
 
+    // Add product to cart
     function addToCart(productId) {
       const product = products.find(p => p.id === productId);
-      const existingProduct = cart.find(p => p.id === productId);
+      const cartItem = cart.find(item => item.id === productId);
 
-      if (existingProduct) {
-        existingProduct.quantity += 1;
+      if (cartItem) {
+        cartItem.quantity++;
       } else {
         cart.push({ ...product, quantity: 1 });
       }
 
-      localStorage.setItem('cart', JSON.stringify(cart));
       updateCartCount();
     }
 
+    // Update cart count
     function updateCartCount() {
       const cartCount = document.getElementById('cartCount');
-      cartCount.textContent = cart.reduce((acc, item) => acc + item.quantity, 0);
+      cartCount.textContent = cart.length;
     }
 
-    function filterProducts() {
-      const searchInput = document.getElementById('searchInput').value.toLowerCase();
-      const filteredProducts = products.filter(product => 
-        product.name.toLowerCase().includes(searchInput) || product.description.toLowerCase().includes(searchInput)
-      );
-      renderProducts(filteredProducts);
-    }
-
-    function goToCart() {
+    // Go to checkout page
+    function goToCheckout() {
       const cartData = encodeURIComponent(JSON.stringify(cart));
-      window.location.href = `payment.html?cart=${cartData}`;
+      window.location.href = `checkout.html?cart=${cartData}`;
     }
 
-    // Initial render
-    renderProducts(products);
-    updateCartCount();
+    renderProducts(); // Initial render
   </script>
+
 </body>
 </html>
