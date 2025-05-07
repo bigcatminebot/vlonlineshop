@@ -4,7 +4,139 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VL ONLINE SHOP</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f5f2;
+      color: #333;
+      margin: 0;
+    }
+    header {
+      background-color: #1a1a1a;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    header span {
+      color: #e0b973;
+    }
+    .search-bar {
+      margin: 20px;
+      text-align: center;
+    }
+    .search-bar input {
+      padding: 10px;
+      width: 80%;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .product-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+      justify-content: center;
+    }
+    .product {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 250px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    .product:hover {
+      transform: translateY(-5px);
+    }
+    .product img {
+      width: 100%;
+      border-radius: 6px;
+    }
+    .product h4 {
+      margin: 10px 0;
+      color: #1a1a1a;
+    }
+    .product p {
+      color: #888;
+      font-size: 14px;
+    }
+    .product .price {
+      font-size: 18px;
+      font-weight: bold;
+      color: #e0b973;
+      margin: 10px 0;
+    }
+    .product button {
+      background-color: #1a1a1a;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .product button:hover {
+      background-color: #e0b973;
+    }
+    .cart-summary {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #1a1a1a;
+      color: white;
+      padding: 15px;
+      border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+    }
+    .cart-summary span {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+    .cart-summary i {
+      font-size: 24px;
+    }
+    #cartPreview {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: white;
+      color: #333;
+      width: 300px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 15px;
+      z-index: 1002;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    #cartPreview h4 {
+      margin-top: 0;
+    }
+    #cartPreview button {
+      margin-left: 5px;
+      padding: 3px 8px;
+      font-size: 14px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
 
