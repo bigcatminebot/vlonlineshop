@@ -20,6 +20,9 @@
       align-items: center;
       font-size: 24px;
       font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
     header span {
       color: #e0b973;
@@ -44,6 +47,20 @@
     }
     .cart-summary li {
       margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cart-summary li button {
+      padding: 5px;
+      background-color: #1a1a1a;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .cart-summary li button:hover {
+      background-color: #e0b973;
     }
     .total {
       font-size: 20px;
@@ -109,14 +126,36 @@
     let total = 0;
 
     // Render Cart Items
-    cartData.forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = `${item.name} - Rp ${item.price.toLocaleString('id-ID')} x ${item.quantity}`;
-      cartItemsContainer.appendChild(li);
-      total += item.price * item.quantity;
-    });
+    function renderCart() {
+      cartItemsContainer.innerHTML = ''; // Clear previous cart items
+      total = 0;
+      cartData.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          ${item.name} - Rp ${item.price.toLocaleString('id-ID')} x ${item.quantity}
+          <div>
+            <button onclick="updateQuantity(${index}, 'decrease')">-</button>
+            <span>Qty: ${item.quantity}</span>
+            <button onclick="updateQuantity(${index}, 'increase')">+</button>
+          </div>
+        `;
+        cartItemsContainer.appendChild(li);
+        total += item.price * item.quantity;
+      });
+      totalPriceContainer.textContent = `Total: Rp ${total.toLocaleString('id-ID')}`;
+    }
 
-    totalPriceContainer.textContent = `Total: Rp ${total.toLocaleString('id-ID')}`;
+    // Update Product Quantity
+    function updateQuantity(index, action) {
+      if (action === 'increase') {
+        cartData[index].quantity++;
+      } else if (action === 'decrease' && cartData[index].quantity > 1) {
+        cartData[index].quantity--;
+      }
+      renderCart();
+    }
+
+    renderCart(); // Render cart on page load
 
     // Haversine formula to calculate distance in kilometers
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -133,32 +172,4 @@
 
     // Get shipping cost based on location
     function getShippingCost() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          const userLat = position.coords.latitude;
-          const userLng = position.coords.longitude;
-
-          const distance = getDistance(centerLocation.lat, centerLocation.lng, userLat, userLng);
-          let shippingCost = 5000;  // Ongkir awal Rp 5000 untuk jarak <= 1 km
-
-          if (distance > 1) {
-            const additionalDistance = Math.ceil((distance - 1) / 1);
-            shippingCost += additionalDistance * 2000;
-          }
-
-          document.getElementById('shippingCost').textContent = `Ongkir: Rp ${shippingCost.toLocaleString('id-ID')}`;
-        });
-      } else {
-        alert("Geolocation tidak didukung oleh browser ini.");
-      }
-    }
-
-    // Complete Order
-    function completeOrder() {
-      alert(`Pembelian selesai! Ongkir: ${document.getElementById('shippingCost').textContent}`);
-      // Implement further order processing here
-    }
-
-  </script>
-</body>
-</html>
+      if (navigator.geolocation)
