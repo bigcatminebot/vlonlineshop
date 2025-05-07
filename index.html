@@ -357,87 +357,104 @@
 
     let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
 
-    function renderProducts() {
+    function renderProducts(filteredProducts = products) {
       const container = document.getElementById('product-list');
       container.innerHTML = '';
-      products.forEach(p => {
-        const qtyInCart = cart[p.id]?.qty || 0;
+      filteredProducts.forEach(p => {
         const item = document.createElement('div');
         item.className = 'product';
-
         item.innerHTML = `
           ${p.bestSeller ? '<div class="badge">BEST SELLER</div>' : ''}
           <img src="${p.image}" alt="${p.name}">
           <h3>${p.name}</h3>
           <p>${p.description}</p>
           <p class="price">Rp${p.price.toLocaleString()}</p>
-<div class="product-buttons">
-<button onclick="addToCart(${p.id})">Tambah</button>
-<a href="${p.href}" class="buy-now">BELI SEKARANG</a>
-</div>
-`;
-container.appendChild(item);
-});
-}
-function addToCart(id) {
-  if (!cart[id]) {
-    cart[id] = { qty: 1 };
-  } else {
-    cart[id].qty += 1;
-  }
-  saveCart();
-}
-
-function saveCart() {
-  localStorage.setItem('vl_cart', JSON.stringify(cart));
-  updateCartIcon();
-}
-
-function updateCartIcon() {
-  const count = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
-  document.getElementById('cart-icon').setAttribute('data-count', count);
-  renderCart();
-}
-
-function renderCart() {
-  const cartItems = document.getElementById('cart-items');
-  const totalBox = document.getElementById('cart-total');
-  cartItems.innerHTML = '';
-  let total = 0;
-  let hasItems = false;
-  Object.keys(cart).forEach(id => {
-    const product = products.find(p => p.id === parseInt(id));
-    if (cart[id].qty > 0) {
-      hasItems = true;
-      const li = document.createElement('li');
-      li.innerHTML = `
-        ${product.name} - ${cart[id].qty} x Rp${product.price.toLocaleString()}
-        <div class="quantity-controls">
-          <button onclick="updateQuantity(${id}, -1)">-</button>
-          <button onclick="updateQuantity(${id}, 1)">+</button>
-        </div>
-      `;
-      cartItems.appendChild(li);
-      total += cart[id].qty * product.price;
+          <div class="product-buttons">
+            <button onclick="addToCart(${p.id})">Tambah</button>
+            <a href="${p.href}" class="buy-now">BELI SEKARANG</a>
+          </div>
+        `;
+        container.appendChild(item);
+      });
     }
-  });
 
-  totalBox.innerText = hasItems ? `Total: Rp${total.toLocaleString()}` : '';
-  document.getElementById('checkout-btn').disabled = !hasItems;
-}
+    function addToCart(id) {
+      if (!cart[id]) {
+        cart[id] = { qty: 1 };
+      } else {
+        cart[id].qty += 1;
+      }
+      saveCart();
+    }
 
-function updateQuantity(id, change) {
-  if (!cart[id]) return;
-  cart[id].qty = Math.max(cart[id].qty + change, 0);
-  saveCart();
-}
+    function saveCart() {
+      localStorage.setItem('vl_cart', JSON.stringify(cart));
+      updateCartIcon();
+    }
 
-function toggleCartPopup() {
-  const popup = document.getElementById('cart-popup');
-  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
-}
+    function updateCartIcon() {
+      const count = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
+      document.getElementById('cart-icon').setAttribute('data-count', count);
+      renderCart();
+    }
 
-renderProducts();
-</script> 
-</body> 
-</html> 
+    function renderCart() {
+      const cartItems = document.getElementById('cart-items');
+      const totalBox = document.getElementById('cart-total');
+      cartItems.innerHTML = '';
+      let total = 0;
+      let hasItems = false;
+
+      Object.keys(cart).forEach(id => {
+        const product = products.find(p => p.id === parseInt(id));
+        if (cart[id].qty > 0) {
+          hasItems = true;
+          const li = document.createElement('li');
+          li.innerHTML = `
+            ${product.name} - ${cart[id].qty} x Rp${product.price.toLocaleString()}
+            <div class="quantity-controls">
+              <button onclick="updateQuantity(${id}, -1)">-</button>
+              <button onclick="updateQuantity(${id}, 1)">+</button>
+            </div>
+          `;
+          cartItems.appendChild(li);
+          total += cart[id].qty * product.price;
+        }
+      });
+
+      totalBox.innerText = hasItems ? `Total: Rp${total.toLocaleString()}` : '';
+      document.getElementById('checkout-btn').disabled = !hasItems;
+    }
+
+    function updateQuantity(id, change) {
+      if (!cart[id]) return;
+      cart[id].qty = Math.max(cart[id].qty + change, 0);
+      saveCart();
+    }
+
+    function toggleCartPopup() {
+      const popup = document.getElementById('cart-popup');
+      popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function searchProduct() {
+      const keyword = document.getElementById('search').value.toLowerCase();
+      const filtered = products.filter(p =>
+        p.name.toLowerCase().includes(keyword) ||
+        p.description.toLowerCase().includes(keyword)
+      );
+      renderProducts(filtered);
+    }
+
+    // Expose ke global scope supaya bisa dipanggil dari HTML
+    window.addToCart = addToCart;
+    window.updateQuantity = updateQuantity;
+    window.toggleCartPopup = toggleCartPopup;
+    window.searchProduct = searchProduct;
+
+    // Inisialisasi awal
+    renderProducts();
+    updateCartIcon();
+  </script>
+</body>
+</html>
