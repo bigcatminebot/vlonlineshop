@@ -63,6 +63,12 @@
       border-radius: 8px;
       margin-bottom: 2rem;
     }
+
+    .alert {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -82,7 +88,8 @@
 
     <div class="form-group">
       <label for="voucher">Kode Voucher</label>
-      <input type="text" id="voucher" placeholder="(Opsional)">
+      <input type="text" id="voucher" placeholder="Masukkan kode voucher (opsional)">
+      <div id="voucher-message" class="alert"></div>
     </div>
 
     <div class="form-group">
@@ -121,25 +128,26 @@
       summary.innerHTML = html;
     }
 
-    function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
+    function validateVoucher(code) {
+      // Menambahkan diskon ongkir dengan nominal tetap
+      const validVouchers = {
+        'ONGKIR5': 5000,  // Potongan ongkir Rp5.000
+        'ONGKIR10': 10000,  // Potongan ongkir Rp10.000
+      };
 
-    function getShippingCost(distance) {
-      return 5000 + Math.floor(distance / 1000) * 2000;
+      if (validVouchers[code]) {
+        return validVouchers[code];
+      } else {
+        alert('⚠️ Voucher tidak tersedia atau habis.');
+        return null;
+      }
     }
 
     function processCheckout() {
       const address = document.getElementById('address').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const method = document.getElementById('method').value;
+      const voucherCode = document.getElementById('voucher').value.trim();
 
       if (!address || !phone || !method) {
         alert('Harap lengkapi semua kolom wajib.');
@@ -150,9 +158,20 @@
       localStorage.setItem('vl_phone', phone);
 
       const total = calculateTotal();
+
+      // Validasi COD jika total lebih dari Rp100.000
       if (method === 'cod' && total > 100000) {
         alert('COD tidak tersedia untuk total belanja di atas Rp100.000. Silakan pilih metode lain.');
         return;
+      }
+
+      const discount = validateVoucher(voucherCode);
+      let shippingCost = 0;
+      if (discount) {
+        shippingCost = discount;  // Menggunakan nominal potongan untuk ongkir
+        document.getElementById('voucher-message').textContent = `🎉 Voucher diterapkan! Anda mendapatkan potongan ongkir Rp${discount.toLocaleString()}`;
+      } else {
+        document.getElementById('voucher-message').textContent = '';
       }
 
       navigator.geolocation.getCurrentPosition(pos => {
@@ -162,23 +181,40 @@
         const storeLon = 105.771176;
 
         const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
-        const shippingCost = getShippingCost(distance);
+        const baseShippingCost = getShippingCost(distance);
+        const finalShippingCost = Math.max(0, baseShippingCost - shippingCost);  // Ongkir tidak boleh negatif
 
-        let message = 'Rincian Pesanan:\n';
+        let message = '🛒 Rincian Pesanan:\n';
         Object.values(cart).forEach(item => {
-          message += `${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
+          message += `📦 ${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
         });
-        message += `Total Belanja: Rp${total.toLocaleString()}\n`;
-        message += `Ongkir: Rp${shippingCost.toLocaleString()}\n`;
-        message += `Alamat: ${address}\nNo HP: ${phone}\nMetode: ${method.toUpperCase()}`;
+        message += `💸 Total Belanja: Rp${total.toLocaleString()}\n`;
+        message += `🚚 Ongkir: Rp${finalShippingCost.toLocaleString()}\n`;
+        message += `🏠 Alamat: ${address}\n📱 No HP: ${phone}\n💳 Metode: ${method.toUpperCase()}`;
 
         if (confirm('Lanjut ke halaman konfirmasi?')) {
-          alert('Silakan screenshot halaman ini.');
           window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
         }
       }, err => {
-        alert('Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.');
+        alert('⚠️ Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.');
       });
+    }
+
+    // Fungsi menghitung jarak
+    function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;  // Radius of the earth in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;  // Distance in meters
+    }
+
+    // Fungsi menghitung ongkos kirim
+    function getShippingCost(distance) {
+      return 5000 + Math.floor(distance / 1000) * 2000;
     }
 
     displayOrderSummary();
