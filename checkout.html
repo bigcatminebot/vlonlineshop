@@ -3,232 +3,181 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Checkout - VL ONLINE SHOP</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Checkout - VL Online Shop</title>
   <style>
     body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
       margin: 0;
-      padding: 0;
+      padding: 2rem;
     }
 
-    header {
-      background-color: #ff4d4f;
-      color: white;
-      padding: 1rem;
+    h1 {
       text-align: center;
-      font-weight: bold;
-      font-size: 1.2rem;
+      color: #003366;
     }
 
-    main {
-      max-width: 500px;
-      margin: 2rem auto;
+    .checkout-form {
+      max-width: 700px;
+      margin: auto;
       background: white;
       padding: 2rem;
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    section {
+    .form-group {
       margin-bottom: 1.5rem;
     }
 
-    section h2 {
-      color: #ff4d4f;
-      margin-bottom: 1rem;
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
     }
 
-    input, select {
+    input, select, textarea {
       width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.5rem;
-      margin-bottom: 1rem;
-      border-radius: 5px;
+      padding: 0.6rem;
       border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
     button {
-      background-color: #ff4d4f;
+      padding: 0.7rem 1.5rem;
+      background-color: #0059b3;
       color: white;
       border: none;
-      padding: 0.75rem;
-      border-radius: 8px;
+      border-radius: 5px;
       cursor: pointer;
       font-size: 1rem;
-      width: 100%;
-      transition: background-color 0.3s ease;
     }
 
     button:hover {
-      background-color: #e04344;
+      background-color: #003366;
     }
 
-    ul#rincianList {
-      padding-left: 1rem;
-    }
-
-    #popup.hidden {
-      display: none;
+    .order-summary {
+      background: #f0f4f8;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-  <header>
-    <div>🛍️ <span>VL ONLINE SHOP</span></div>
-  </header>
+  <h1>Checkout</h1>
+  <div class="checkout-form">
+    <div class="order-summary" id="order-summary"></div>
 
-  <main>
-    <section class="rincian-pesanan">
-      <h2>Rincian Pesanan</h2>
-      <ul id="rincianList"></ul>
-      <p>Total Belanja: <span id="totalBelanja">Rp0</span></p>
-      <p>Ongkir: <span id="ongkir">Rp0</span></p>
-      <p>Total Bayar: <span id="totalBayar">Rp0</span></p>
-    </section>
+    <div class="form-group">
+      <label for="address">Alamat Pengiriman *</label>
+      <textarea id="address" rows="3" placeholder="Tulis alamat lengkap dan patokannya" required></textarea>
+    </div>
 
-    <section>
-      <label>Alamat Pengiriman</label>
-      <input type="text" id="alamatInput" placeholder="Masukkan alamat Anda" />
-      <button onclick="saveAddress()">Simpan Alamat</button>
-      <select id="alamatSelect" onchange="loadSelectedAddress(this.value)"></select>
-    </section>
+    <div class="form-group">
+      <label for="phone">No. HP / WhatsApp *</label>
+      <input type="tel" id="phone" placeholder="Contoh: 08123456789" required>
+    </div>
 
-    <section>
-      <label>Metode Pembayaran</label>
-      <select id="metodePembayaran" onchange="checkCODLimit()">
-        <option value="bca">Transfer BCA</option>
+    <div class="form-group">
+      <label for="voucher">Kode Voucher</label>
+      <input type="text" id="voucher" placeholder="(Opsional)">
+    </div>
+
+    <div class="form-group">
+      <label for="method">Metode Pembayaran *</label>
+      <select id="method" required>
+        <option value="">-- Pilih Metode --</option>
+        <option value="bca">Transfer Bank BCA</option>
         <option value="qris">QRIS</option>
         <option value="cod">COD</option>
       </select>
-    </section>
+    </div>
 
-    <section>
-      <button onclick="handleCheckout()" id="btnCheckout">Selesaikan Pembayaran</button>
-    </section>
-  </main>
-
-  <div id="popup" class="hidden"></div>
+    <button onclick="processCheckout()">Selesaikan Pembayaran</button>
+  </div>
 
   <script>
-    const titikPusat = { lat: -1.6409491, lng: 105.771176 };
-    const drivers = [
-      { id: 1, name: "Vicky Satria Lindy", online: true },
-    ];
+    const cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
 
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    let totalBelanja = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    let ongkir = 0;
-    let biayaAdmin = Math.floor(Math.random() * 501);
-
-    function formatRupiah(num) {
-      return 'Rp' + num.toLocaleString('id-ID');
+    function calculateTotal() {
+      let total = 0;
+      Object.values(cart).forEach(item => {
+        total += item.price * item.qty;
+      });
+      return total;
     }
 
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    function displayOrderSummary() {
+      const summary = document.getElementById('order-summary');
+      let html = '<h3>Rincian Pesanan</h3><ul>';
+      Object.values(cart).forEach(item => {
+        html += `<li>${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}</li>`;
+      });
+      const total = calculateTotal();
+      html += `</ul><p><strong>Total Belanja:</strong> Rp${total.toLocaleString()}</p>`;
+      summary.innerHTML = html;
+    }
+
+    function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // Radius of Earth in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
 
-    function getOngkir(distance) {
-      if (distance <= 1000) return 5000;
-      return 5000 + Math.floor((distance - 1000) / 1000) * 2000;
+    function getShippingCost(distance) {
+      return 5000 + Math.floor(distance / 1000) * 2000;
     }
 
-    function assignDriver() {
-      const onlineDrivers = drivers.filter(driver => driver.online);
-      if (onlineDrivers.length === 0) return null;
-      const randomIndex = Math.floor(Math.random() * onlineDrivers.length);
-      return onlineDrivers[randomIndex];
-    }
+    function processCheckout() {
+      const address = document.getElementById('address').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const method = document.getElementById('method').value;
 
-    function renderCart() {
-      const ul = document.getElementById("rincianList");
-      ul.innerHTML = "";
-      cart.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = `${item.name} x${item.quantity} - ${formatRupiah(item.price * item.quantity)}`;
-        ul.appendChild(li);
-      });
-      document.getElementById("totalBelanja").textContent = formatRupiah(totalBelanja);
-    }
-
-    function saveAddress() {
-      const alamat = document.getElementById("alamatInput").value;
-      if (alamat) {
-        const data = JSON.parse(localStorage.getItem('alamatTersimpan')) || [];
-        data.push(alamat);
-        localStorage.setItem('alamatTersimpan', JSON.stringify(data));
-        renderAlamat();
+      if (!address || !phone || !method) {
+        alert('Harap lengkapi semua kolom wajib.');
+        return;
       }
-    }
 
-    function renderAlamat() {
-      const data = JSON.parse(localStorage.getItem('alamatTersimpan')) || [];
-      const select = document.getElementById('alamatSelect');
-      select.innerHTML = '';
-      data.forEach(alamat => {
-        const opt = document.createElement('option');
-        opt.value = alamat;
-        opt.textContent = alamat;
-        select.appendChild(opt);
-      });
-    }
+      const total = calculateTotal();
+      if (method === 'cod' && total > 100000) {
+        alert('COD tidak tersedia untuk total belanja di atas Rp100.000. Silakan pilih metode lain.');
+        return;
+      }
 
-    function loadSelectedAddress(value) {
-      document.getElementById("alamatInput").value = value;
-    }
-
-    function checkCODLimit() {
-      const metode = document.getElementById("metodePembayaran").value;
-      document.getElementById("btnCheckout").disabled = (metode === 'cod' && totalBelanja > 100000);
-    }
-
-    function handleCheckout() {
       navigator.geolocation.getCurrentPosition(pos => {
         const userLat = pos.coords.latitude;
-        const userLng = pos.coords.longitude;
-        const distance = calculateDistance(titikPusat.lat, titikPusat.lng, userLat, userLng);
-        ongkir = getOngkir(distance);
+        const userLon = pos.coords.longitude;
+        const storeLat = -1.6409491;
+        const storeLon = 105.771176;
 
-        const alamat = document.getElementById("alamatInput").value;
-        const metode = document.getElementById("metodePembayaran").value;
-        const driver = assignDriver();
-        if (!driver) return alert("Tidak ada driver yang tersedia saat ini.");
+        const distance = getDistanceFromLatLonInMeters(storeLat, storeLon, userLat, userLon);
+        const shippingCost = getShippingCost(distance);
 
-        const totalBayar = totalBelanja + ongkir + biayaAdmin;
-        document.getElementById("ongkir").textContent = formatRupiah(ongkir);
-        document.getElementById("totalBayar").textContent = formatRupiah(totalBayar);
+        let message = 'Rincian Pesanan:\n';
+        Object.values(cart).forEach(item => {
+          message += `${item.name} x ${item.qty} - Rp${(item.price * item.qty).toLocaleString()}\n`;
+        });
+        message += `Total Belanja: Rp${total.toLocaleString()}\n`;
+        message += `Ongkir: Rp${shippingCost.toLocaleString()}\n`;
+        message += `Alamat: ${address}\nNo HP: ${phone}\nMetode: ${method.toUpperCase()}`;
 
-        const pesan = encodeURIComponent(`Halo Admin, berikut pesanan baru:\n\n` +
-          `📦 Produk:\n${cart.map(p => `- ${p.name} x${p.quantity}`).join("\n")}\n\n` +
-          `📍 Alamat: ${alamat}\n` +
-          `🚗 Driver: ${driver.name}\n` +
-          `💰 Total Belanja: ${formatRupiah(totalBelanja)}\n` +
-          `🚚 Ongkir: ${formatRupiah(ongkir)}\n` +
-          `🧾 Biaya Admin: ${formatRupiah(biayaAdmin)}\n` +
-          `💵 Total Bayar: ${formatRupiah(totalBayar)}\n` +
-          `Metode: ${metode.toUpperCase()}`);
-
-        window.open(`https://wa.me/6285709458101?text=${pesan}`);
+        if (confirm('Lanjut ke halaman konfirmasi?')) {
+          alert('Silakan screenshot halaman ini.');
+          window.location.href = `https://wa.me/6285709458101?text=${encodeURIComponent(message)}`;
+        }
       }, err => {
-        alert("Gagal mengambil lokasi Anda. Pastikan izin lokasi aktif.");
+        alert('Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.');
       });
     }
 
-    renderCart();
-    renderAlamat();
-    checkCODLimit();
+    displayOrderSummary();
   </script>
 </body>
 </html>
