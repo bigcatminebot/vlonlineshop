@@ -298,6 +298,24 @@
       width: 48%;
       text-align: center;
     }
+    
+   body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; margin: 0; }
+    header { background: #0059b3; color: white; padding: 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .search-box, .filter-box { display: flex; align-items: center; gap: 10px; }
+    .filter-box select { padding: 0.5rem; border-radius: 5px; border: none; }
+    main { padding: 2rem 1rem; max-width: 1200px; margin: auto; }
+    .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+    .product { position: relative; background: white; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 1rem; border: 1px solid #ccc; }
+    .product img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; }
+    .product h3 { color: #003366; font-size: 1.1rem; }
+    .product p.price { color: #0059b3; font-weight: bold; }
+    .product .original-price { text-decoration: line-through; color: gray; margin-left: 8px; }
+    .badge { position: absolute; top: 10px; right: 10px; background: gold; padding: 0.3rem 0.7rem; border-radius: 5px; font-size: 0.8rem; font-weight: bold; color: #003366; }
+    .badge-discount { background: red; color: white; left: 10px; right: auto; }
+    .product-buttons { display: flex; justify-content: space-between; margin-top: 1rem; }
+    .product-buttons button, .product-buttons .buy-now { width: 48%; padding: 0.5rem; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; }
+    .product-buttons .buy-now { background: #003366; color: white; text-decoration: none; text-align: center; }
+    .product-buttons button { background: #0059b3; color: white; }
   </style>
 </head>
 <body>
@@ -307,154 +325,71 @@
       <input type="text" id="search" placeholder="Cari produk...">
       <button onclick="searchProduct()">🔍</button>
     </div>
+    <div class="filter-box">
+      <label for="category-filter">Kategori:</label>
+      <select id="category-filter" onchange="filterProducts()">
+        <option value="all">Semua</option>
+        <option value="Elektronik">Elektronik</option>
+        <option value="Baju">Baju</option>
+        <option value="Aksesoris">Aksesoris</option>
+      </select>
+    </div>
   </header>
 
   <main>
     <section class="products" id="product-list"></section>
   </main>
 
-  <!-- Cart Popup -->
-  <div class="cart-popup" id="cart-popup">
-    <h2>Keranjang</h2>
-    <ul id="cart-items"></ul>
-    <p id="cart-total"></p>
-    <button id="checkout-btn" onclick="location.href='checkout.html'">Lanjut ke Checkout</button>
-  </div>
-
-  <!-- Cart Icon -->
-  <div class="cart-icon" id="cart-icon" onclick="toggleCartPopup()" data-count="0">🛒</div>
-
   <script>
     const products = [
-      {
-        id: 1,
-        name: 'Produk A',
-        price: 10000,
-        description: 'Deskripsi produk A yang luar biasa',
-        image: 'https://via.placeholder.com/200x150?text=Produk+A',
-        href: 'https://example.com/product/1',
-        bestSeller: false
-      },
-      {
-        id: 2,
-        name: 'Produk B',
-        price: 20000,
-        description: 'Deskripsi produk B yang hebat',
-        image: 'https://via.placeholder.com/200x150?text=Produk+B',
-        href: 'https://example.com/product/2',
-        bestSeller: true
-      },
-      {
-        id: 3,
-        name: 'Produk C',
-        price: 30000,
-        description: 'Deskripsi produk C yang sangat menarik',
-        image: 'https://via.placeholder.com/200x150?text=Produk+C',
-        href: 'https://example.com/product/3',
-        bestSeller: false
-      }
+      { id: 1, name: 'Produk A', price: 10000, description: 'Deskripsi produk A', image: 'https://via.placeholder.com/200x150?text=A', href: '#', bestSeller: true, category: 'Elektronik' },
+      { id: 2, name: 'Produk B', price: 15000, originalPrice: 25000, description: 'Diskon produk B!', image: 'https://via.placeholder.com/200x150?text=B', href: '#', category: 'Baju' },
+      { id: 3, name: 'Produk C', price: 5000, description: 'Deskripsi produk C', image: 'https://via.placeholder.com/200x150?text=C', href: '#', category: 'Aksesoris' }
     ];
 
-    let cart = JSON.parse(localStorage.getItem('vl_cart')) || {};
-
-    function renderProducts(filteredProducts = products) {
+    function renderProducts(filtered = products) {
       const container = document.getElementById('product-list');
       container.innerHTML = '';
-      filteredProducts.forEach(p => {
+      filtered.forEach(p => {
         const item = document.createElement('div');
         item.className = 'product';
         item.innerHTML = `
           ${p.bestSeller ? '<div class="badge">BEST SELLER</div>' : ''}
+          ${p.originalPrice ? '<div class="badge badge-discount">DISKON</div>' : ''}
           <img src="${p.image}" alt="${p.name}">
           <h3>${p.name}</h3>
           <p>${p.description}</p>
-          <p class="price">Rp${p.price.toLocaleString()}</p>
+          <p class="price">
+            Rp${p.price.toLocaleString()}
+            ${p.originalPrice ? `<span class="original-price">Rp${p.originalPrice.toLocaleString()}</span>` : ''}
+          </p>
           <div class="product-buttons">
             <button onclick="addToCart(${p.id})">Tambah</button>
-            <a href="${p.href}" class="buy-now">BELI SEKARANG</a>
+            <a href="${p.href}" class="buy-now">Beli Sekarang</a>
           </div>
         `;
         container.appendChild(item);
       });
     }
 
-    function addToCart(id) {
-      if (!cart[id]) {
-        cart[id] = { qty: 1 };
-      } else {
-        cart[id].qty += 1;
-      }
-      saveCart();
-    }
-
-    function saveCart() {
-      localStorage.setItem('vl_cart', JSON.stringify(cart));
-      updateCartIcon();
-    }
-
-    function updateCartIcon() {
-      const count = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
-      document.getElementById('cart-icon').setAttribute('data-count', count);
-      renderCart();
-    }
-
-    function renderCart() {
-      const cartItems = document.getElementById('cart-items');
-      const totalBox = document.getElementById('cart-total');
-      cartItems.innerHTML = '';
-      let total = 0;
-      let hasItems = false;
-
-      Object.keys(cart).forEach(id => {
-        const product = products.find(p => p.id === parseInt(id));
-        if (cart[id].qty > 0) {
-          hasItems = true;
-          const li = document.createElement('li');
-          li.innerHTML = `
-            ${product.name} - ${cart[id].qty} x Rp${product.price.toLocaleString()}
-            <div class="quantity-controls">
-              <button onclick="updateQuantity(${id}, -1)">-</button>
-              <button onclick="updateQuantity(${id}, 1)">+</button>
-            </div>
-          `;
-          cartItems.appendChild(li);
-          total += cart[id].qty * product.price;
-        }
-      });
-
-      totalBox.innerText = hasItems ? `Total: Rp${total.toLocaleString()}` : '';
-      document.getElementById('checkout-btn').disabled = !hasItems;
-    }
-
-    function updateQuantity(id, change) {
-      if (!cart[id]) return;
-      cart[id].qty = Math.max(cart[id].qty + change, 0);
-      saveCart();
-    }
-
-    function toggleCartPopup() {
-      const popup = document.getElementById('cart-popup');
-      popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function searchProduct() {
-      const keyword = document.getElementById('search').value.toLowerCase();
-      const filtered = products.filter(p =>
-        p.name.toLowerCase().includes(keyword) ||
-        p.description.toLowerCase().includes(keyword)
-      );
+    function filterProducts() {
+      const selected = document.getElementById('category-filter').value;
+      const filtered = selected === 'all' ? products : products.filter(p => p.category === selected);
       renderProducts(filtered);
     }
 
-    // Expose ke global scope supaya bisa dipanggil dari HTML
-    window.addToCart = addToCart;
-    window.updateQuantity = updateQuantity;
-    window.toggleCartPopup = toggleCartPopup;
-    window.searchProduct = searchProduct;
+    function searchProduct() {
+      const term = document.getElementById('search').value.toLowerCase();
+      const filtered = products.filter(p => p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term));
+      renderProducts(filtered);
+    }
 
-    // Inisialisasi awal
+    function addToCart(id) {
+      alert(`Produk ID ${id} ditambahkan ke keranjang!`);
+    }
+
+    // Load awal
     renderProducts();
-    updateCartIcon();
   </script>
 </body>
 </html>
