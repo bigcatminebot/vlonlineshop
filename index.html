@@ -84,13 +84,15 @@
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       padding: 1rem;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
       overflow: hidden;
-      border: 1px solid #ccc; /* Perkecil border produk */
+      border: 1px solid #ccc;
     }
 
     .product:hover {
       transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      border: 2px solid #0059b3;
     }
 
     .product img {
@@ -126,15 +128,9 @@
       cursor: pointer;
       margin: 0.5rem 0;
       font-size: 1rem;
-      transition: background 0.3s ease;
     }
 
-    .product button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .product button:hover:enabled {
+    .product button:hover {
       background: #003366;
     }
 
@@ -148,7 +144,6 @@
       text-align: center;
       margin-top: 0.5rem;
       font-size: 1rem;
-      transition: background 0.3s ease;
     }
 
     .product .buy-now:hover {
@@ -227,10 +222,9 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: background-color 0.3s ease, opacity 0.3s;
     }
 
-    .cart-popup button#checkout-btn:hover:enabled {
+    .cart-popup button#checkout-btn:hover {
       background-color: #003f7f;
     }
 
@@ -271,20 +265,20 @@
       background-color: #f5f7fa;
     }
 
-    /* Button + and - untuk keranjang */
+    /* Button + dan - untuk keranjang */
     .quantity-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       background: #f5f7fa;
-      border-radius: 5px;
-      padding: 0.3rem 0.6rem;
+      border-radius: 50%;
+      padding: 0.2rem 0.4rem;
       cursor: pointer;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       color: #003366;
       margin: 0 0.3rem;
-      min-width: 28px;
-      height: 28px;
+      min-width: 24px;
+      height: 24px;
       line-height: 1;
       text-align: center;
     }
@@ -293,6 +287,13 @@
       background: #ececec;
     }
 
+    /* Layout untuk tombol + dan - bersebelahan */
+    .quantity-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -344,6 +345,10 @@
           <p class="price">Rp${p.price.toLocaleString()}</p>
           <button onclick="addToCart(${p.id})">Tambah</button>
           <a href="https://example.com/${p.id}" class="buy-now">BELI SEKARANG</a>
+          <div class="quantity-controls">
+            <button class="quantity-btn" onclick="removeFromCart(${p.id})">-</button>
+            <button class="quantity-btn" onclick="addToCart(${p.id})">+</button>
+          </div>
         `;
         container.appendChild(item);
       });
@@ -417,9 +422,12 @@
       renderProducts(filtered);
     }
 
-    renderProducts();
-    renderCart();
-    updateCartIcon();
-  </script>
-</body>
-</html>
+    renderProducts
+();
+renderCart();
+updateCartIcon();
+</script>
+
+</body> 
+
+</html> 
