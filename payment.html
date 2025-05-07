@@ -3,101 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Halaman Pembayaran</title>
+  <title>VL ONLINE SHOP - Pembayaran</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f5f2;
       color: #333;
     }
-    h2 {
+    header {
+      position: sticky;
+      top: 0;
+      background-color: #1a1a1a;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 1000;
+    }
+    header span {
+      color: #e0b973;
+      margin-left: 10px;
+    }
+    .container {
+      padding: 40px;
+    }
+    #summary {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
     #map {
-      height: 300px;
       width: 100%;
-      margin-bottom: 20px;
+      height: 300px;
+      border-radius: 12px;
+      margin-top: 20px;
     }
-    .summary {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    h2 {
+      color: #1a1a1a;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    #manualLocation, #alamatHistory {
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #alamatHistory div {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>Halaman Pembayaran</h2>
-  <div id="map"></div>
-  <div class="summary">
-    <p><strong>Total Belanja:</strong> <span id="totalBelanja"></span></p>
-    <p><strong>Jarak ke Toko:</strong> <span id="distance"></span></p>
-    <p><strong>Ongkos Kirim:</strong> <span id="shipping"></span></p>
-    <p><strong>Total Akhir:</strong> <span id="totalAkhir"></span></p>
+  <header>
+    <div>🛍️ <span>VL ONLINE SHOP</span></div>
+  </header>
+  <div class="container">
+    <div id="summary">
+      <h2>Ringkasan Pembelian</h2>
+      <ul id="orderList"></ul>
+      <p><strong>Ongkir:</strong> Rp<span id="shipping">0</span></p>
+      <p><strong>Total:</strong> Rp<span id="total">0</span></p>
+      <p><strong>Jarak ke toko:</strong> <span id="distance">0</span> km</p>
+    </div>
+
+    <div id="manualLocation">
+      <h3>Atau tentukan lokasi secara manual dengan klik peta:</h3>
+      <button onclick="enableManualMarker()">Aktifkan Penanda Manual</button>
+    </div>
+
+    <div id="alamatHistory">
+      <h3>Riwayat Alamat</h3>
+    </div>
+
+    <div id="map"></div>
+    <button onclick="konfirmasiPesanan()">Konfirmasi dan Bayar</button>
   </div>
 
   <script>
-    // Lokasi toko tetap berdasarkan link Vistra Delivery
-    const toko = { lat: -1.6409491, lng: 105.771176 };
-    const urlParams = new URLSearchParams(window.location.search);
-    const totalBelanja = parseInt(urlParams.get('total')) || 0;
+    const params = new URLSearchParams(window.location.search);
+    const cartData = JSON.parse(decodeURIComponent(params.get('cart')));
 
-    function formatRupiah(angka) {
-      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(angka);
-    }
+    const orderList = document.getElementById('orderList');
+    const shippingEl = document.getElementById('shipping');
+    const totalEl = document.getElementById('total');
+    const distanceEl = document.getElementById('distance');
 
-    function calculateShipping(distanceInMeters) {
-      if (distanceInMeters <= 1000) return 5000;
-      const extraKm = Math.ceil((distanceInMeters - 1000) / 1000);
-      return 5000 + (extraKm * 2000);
-    }
+    const storeLat = -1.6409491;
+    const storeLng = 105.771176;
+    let totalHarga = 0;
+    let map;
+    let manualMarker;
+    let allowManual = false;
+    let alamatLog = JSON.parse(localStorage.getItem('alamatLog')) || [];
 
-    function haversineDistance(coord1, coord2) {
-      const R = 6371000; // radius bumi dalam meter
-      const toRad = x => x * Math.PI / 180;
-      const dLat = toRad(coord2.lat - coord1.lat);
-      const dLng = toRad(coord2.lng - coord1.lng);
-      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLng / 2) ** 2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    function calculateDistance(userLat, userLng) {
+      const R = 6371e3;
+      const φ1 = userLat * Math.PI / 180;
+      const φ2 = storeLat * Math.PI / 180;
+      const Δφ = (storeLat - userLat) * Math.PI / 180;
+      const Δλ = (storeLng - userLng) * Math.PI / 180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
       return R * c;
     }
 
-    function init() {
+    function tampilkanPeta(userLat, userLng) {
+      map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 15,
+        center: { lat: userLat, lng: userLng },
+      });
+
+      new google.maps.Marker({ position: { lat: storeLat, lng: storeLng }, map, label: "Toko" });
+      new google.maps.Marker({ position: { lat: userLat, lng: userLng }, map, label: "Anda" });
+
+      map.addListener("click", function(e) {
+        if (!allowManual) return;
+        if (manualMarker) manualMarker.setMap(null);
+        manualMarker = new google.maps.Marker({ position: e.latLng, map, label: "Anda" });
+        hitungOngkir(e.latLng.lat(), e.latLng.lng());
+        reverseGeocode(e.latLng.lat(), e.latLng.lng());
+      });
+    }
+
+    function reverseGeocode(lat, lng) {
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('manualAddress').textContent = data.display_name || 'Tidak ditemukan';
+        })
+        .catch(() => {
+          document.getElementById('manualAddress').textContent = 'Gagal mendapatkan alamat';
+        });
+    }
+
+    function hitungOngkir(userLat, userLng) {
+      const distance = calculateDistance(userLat, userLng);
+      distanceEl.textContent = (distance / 1000).toFixed(2);
+
+      let shipping = 5000;
+      if (distance > 1000) {
+        const extraKm = Math.ceil((distance - 1000) / 1000);
+        shipping += extraKm * 2000;
+      }
+
+      shippingEl.textContent = shipping.toLocaleString('id-ID');
+      totalEl.textContent = (totalHarga + shipping).toLocaleString('id-ID');
+    }
+
+    function enableManualMarker() {
+      allowManual = true;
+      alert("Klik pada peta untuk memilih lokasi Anda.");
+    }
+
+    function konfirmasiPesanan() {
+      alert('Pesanan Anda telah dikonfirmasi!');
+    }
+
+    function renderCart(cart) {
+      totalHarga = 0;
+      cart.forEach(item => {
+        const subtotal = item.price * item.quantity;
+        totalHarga += subtotal;
+        const li = document.createElement('li');
+        li.textContent = `${item.name} x ${item.quantity} = Rp${subtotal.toLocaleString('id-ID')}`;
+        orderList.appendChild(li);
+      });
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
-          const pembeli = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-
-          const distance = haversineDistance(toko, pembeli);
-          const ongkir = calculateShipping(distance);
-          const totalAkhir = totalBelanja + ongkir;
-
-          document.getElementById("totalBelanja").textContent = formatRupiah(totalBelanja);
-          document.getElementById("distance").textContent = (distance / 1000).toFixed(2) + ' km';
-          document.getElementById("shipping").textContent = formatRupiah(ongkir);
-          document.getElementById("totalAkhir").textContent = formatRupiah(totalAkhir);
-
-          // Tampilkan peta menggunakan iframe Google Maps (tanpa API)
-          const mapFrame = document.createElement('iframe');
-          mapFrame.width = '100%';
-          mapFrame.height = '300';
-          mapFrame.style.border = '0';
-          mapFrame.loading = 'lazy';
-          mapFrame.referrerPolicy = 'no-referrer-when-downgrade';
-          mapFrame.src = `https://maps.google.com/maps?q=${pembeli.lat},${pembeli.lng}&hl=id&z=15&output=embed`;
-          document.getElementById('map').appendChild(mapFrame);
-        }, err => {
-          alert("Gagal mendeteksi lokasi Anda.");
+          hitungOngkir(position.coords.latitude, position.coords.longitude);
+          tampilkanPeta(position.coords.latitude, position.coords.longitude);
+        }, () => {
+          alert("Gagal mendapatkan lokasi Anda. Silakan pilih lokasi di peta.");
+          tampilkanPeta(storeLat, storeLng);
         });
       } else {
-        alert("Geolocation tidak didukung oleh browser Anda.");
+        alert("Geolokasi tidak didukung browser. Silakan pilih lokasi di peta.");
+        tampilkanPeta(storeLat, storeLng);
       }
     }
 
-    window.onload = init;
+    function tampilkanAlamat() {
+      const alamatHistory = document.getElementById('alamatHistory');
+      alamatHistory.innerHTML = '';
+
+      alamatLog.forEach((alamat, index) => {
+        const alamatDiv = document.createElement('div');
+        alamatDiv.textContent = `Alamat ${index + 1}: ${alamat}`;
+        const pilihButton = document.createElement('button');
+        pilihButton.textContent = 'Pilih Alamat';
+        pilihButton.onclick = () => pilihAlamat(alamat);
+        alamatDiv.appendChild(pilihButton);
+        alamatHistory.appendChild(alamatDiv);
+      });
+    }
+
+    function pilihAlamat(alamat) {
+      document.getElementById('manualAddress').textContent = alamat;
+    }
+
+    function tambahAlamat() {
+      const newAlamat = prompt('Masukkan alamat baru:');
+      if (newAlamat) {
+        alamatLog.push(newAlamat);
+        localStorage.setItem('alamatLog', JSON.stringify(alamatLog));
+        tampilkanAlamat();
+      }
+    }
+
+    renderCart(cartData);
+    tampilkanAlamat();
   </script>
+
+  <script async src="https://maps.googleapis.com/maps/api/js?callback=Function.prototype"></script>
 </body>
 </html>
