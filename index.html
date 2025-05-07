@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VL ONLINE SHOP</title>
+  <title>VL ONLINE SHOP - Pembayaran</title>
   <style>
     body {
       margin: 0;
@@ -30,59 +30,43 @@
     .container {
       padding: 40px;
     }
-    .product {
-      background-color: white;
+    #summary {
+      background: white;
+      padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-bottom: 20px;
     }
-    .product img {
-      width: 100px;
-      height: auto;
-      border-radius: 8px;
+    #map {
+      width: 100%;
+      height: 300px;
+      border-radius: 12px;
+      margin-top: 20px;
     }
-    .info {
-      flex-grow: 1;
-      padding: 0 20px;
+    h2 {
+      color: #1a1a1a;
     }
-    .info h3 {
-      margin: 0 0 10px 0;
+    ul {
+      padding-left: 20px;
     }
-    .info p {
-      margin: 5px 0;
-    }
-    .actions {
-      text-align: right;
-    }
-    .quantity {
-      width: 50px;
-      padding: 5px;
+    li {
       margin-bottom: 10px;
-      text-align: center;
+    }
+    #manualLocation {
+      margin-top: 20px;
+    }
+    label, input {
+      display: block;
+      margin: 8px 0;
     }
     button {
-      padding: 8px 16px;
-      background-color: #e0b973;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #1a1a1a;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-    }
-    #cartContainer {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-top: 30px;
-    }
-    .cart-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -91,122 +75,113 @@
     <div>🛍️ <span>VL ONLINE SHOP</span></div>
   </header>
   <div class="container">
-    <div class="product" data-id="1" data-price="50000">
-      <img src="https://via.placeholder.com/100" alt="Produk 1">
-      <div class="info">
-        <h3>Produk Elegan 1</h3>
-        <p>Harga: Rp50.000</p>
-      </div>
-      <div class="actions">
-        <input type="number" class="quantity" value="1" min="1">
-        <button onclick="addToCart(this)">Tambah ke Keranjang</button>
-      </div>
+    <div id="summary">
+      <h2>Ringkasan Pembelian</h2>
+      <ul id="orderList"></ul>
+      <p><strong>Ongkir:</strong> Rp<span id="shipping">0</span></p>
+      <p><strong>Total:</strong> Rp<span id="total">0</span></p>
+      <p><strong>Jarak ke toko:</strong> <span id="distance">0</span> km</p>
     </div>
 
-    <div class="product" data-id="2" data-price="75000">
-      <img src="https://via.placeholder.com/100" alt="Produk 2">
-      <div class="info">
-        <h3>Produk Elegan 2</h3>
-        <p>Harga: Rp75.000</p>
-      </div>
-      <div class="actions">
-        <input type="number" class="quantity" value="1" min="1">
-        <button onclick="addToCart(this)">Tambah ke Keranjang</button>
-      </div>
+    <div id="manualLocation">
+      <h3>Atau tentukan lokasi secara manual:</h3>
+      <label for="lat">Latitude:</label>
+      <input type="number" id="lat" step="any">
+      <label for="lng">Longitude:</label>
+      <input type="number" id="lng" step="any">
+      <button onclick="useManualLocation()">Gunakan Lokasi Manual</button>
     </div>
 
-    <div id="cartContainer">
-      <h3>Keranjang Belanja</h3>
-      <div id="cartList"></div>
-      <p><strong>Total:</strong> Rp<span id="totalPrice">0</span></p>
-      <button onclick="checkout()">Checkout</button>
-    </div>
+    <div id="map"></div>
   </div>
 
   <script>
-    let cart = [];
+    const params = new URLSearchParams(window.location.search);
+    const cartData = JSON.parse(decodeURIComponent(params.get('cart')));
 
-    function addToCart(button) {
-      const product = button.closest('.product');
-      const id = product.getAttribute('data-id');
-      const name = product.querySelector('h3').textContent;
-      const price = parseInt(product.getAttribute('data-price'));
-      const quantity = parseInt(product.querySelector('.quantity').value);
+    const orderList = document.getElementById('orderList');
+    const shippingEl = document.getElementById('shipping');
+    const totalEl = document.getElementById('total');
+    const distanceEl = document.getElementById('distance');
 
-      const existing = cart.find(item => item.id === id);
-      if (existing) {
-        existing.quantity += quantity;
-      } else {
-        cart.push({ id, name, price, quantity });
+    const storeLat = -1.6409491;
+    const storeLng = 105.771176;
+    let totalHarga = 0;
+    let map;
+
+    function calculateDistance(userLat, userLng) {
+      const R = 6371e3;
+      const φ1 = userLat * Math.PI / 180;
+      const φ2 = storeLat * Math.PI / 180;
+      const Δφ = (storeLat - userLat) * Math.PI / 180;
+      const Δλ = (storeLng - userLng) * Math.PI / 180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      return R * c;
+    }
+
+    function tampilkanPeta(userLat, userLng) {
+      map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 15,
+        center: { lat: userLat, lng: userLng },
+      });
+      new google.maps.Marker({ position: { lat: storeLat, lng: storeLng }, map, label: "Toko" });
+      new google.maps.Marker({ position: { lat: userLat, lng: userLng }, map, label: "Anda" });
+    }
+
+    function hitungOngkir(userLat, userLng) {
+      const distance = calculateDistance(userLat, userLng);
+      distanceEl.textContent = (distance / 1000).toFixed(2);
+
+      let shipping = 5000;
+      if (distance > 1000) {
+        const extraKm = Math.ceil((distance - 1000) / 1000);
+        shipping += extraKm * 2000;
       }
 
-      renderCart();
+      shippingEl.textContent = shipping.toLocaleString('id-ID');
+      totalEl.textContent = (totalHarga + shipping).toLocaleString('id-ID');
+
+      tampilkanPeta(userLat, userLng);
     }
 
-    function removeFromCart(id) {
-      cart = cart.filter(item => item.id !== id);
-      renderCart();
-    }
-
-    function renderCart() {
-      const cartList = document.getElementById("cartList");
-      const totalEl = document.getElementById("totalPrice");
-      cartList.innerHTML = '';
-
-      let total = 0;
+    function renderCart(cart) {
+      totalHarga = 0;
       cart.forEach(item => {
         const subtotal = item.price * item.quantity;
-        total += subtotal;
-        cartList.innerHTML += `
-          <div class="cart-item">
-            <span>${item.name} x ${item.quantity} = Rp${subtotal.toLocaleString('id-ID')}</span>
-            <button onclick="removeFromCart('${item.id}')">Hapus</button>
-          </div>
-        `;
+        totalHarga += subtotal;
+        const li = document.createElement('li');
+        li.textContent = `${item.name} x ${item.quantity} = Rp${subtotal.toLocaleString('id-ID')}`;
+        orderList.appendChild(li);
       });
 
-      totalEl.textContent = total.toLocaleString('id-ID');
-    }
-
-    function checkout() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
-          const userLat = position.coords.latitude;
-          const userLng = position.coords.longitude;
-
-          const storeLat = -1.6409491;
-          const storeLng = 105.771176;
-
-          const R = 6371e3; // meters
-          const φ1 = userLat * Math.PI / 180;
-          const φ2 = storeLat * Math.PI / 180;
-          const Δφ = (storeLat - userLat) * Math.PI / 180;
-          const Δλ = (storeLng - userLng) * Math.PI / 180;
-
-          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                    Math.cos(φ1) * Math.cos(φ2) *
-                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-          const distance = R * c; // in meters
-
-          let shipping = 5000;
-          if (distance > 1000) {
-            const extraKm = Math.ceil((distance - 1000) / 1000);
-            shipping += extraKm * 2000;
-          }
-
-          const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          const grandTotal = total + shipping;
-
-          alert(`Jarak Anda: ${(distance/1000).toFixed(2)} km\nOngkir: Rp${shipping.toLocaleString('id-ID')}\nTotal Belanja: Rp${grandTotal.toLocaleString('id-ID')}`);
+          hitungOngkir(position.coords.latitude, position.coords.longitude);
         }, () => {
-          alert("Gagal mendapatkan lokasi Anda.");
+          alert("Gagal mendapatkan lokasi Anda. Silakan masukkan lokasi manual.");
         });
       } else {
-        alert("Browser tidak mendukung geolokasi.");
+        alert("Geolokasi tidak didukung browser. Silakan masukkan lokasi manual.");
       }
     }
+
+    function useManualLocation() {
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lng = parseFloat(document.getElementById('lng').value);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        hitungOngkir(lat, lng);
+      } else {
+        alert("Masukkan koordinat yang valid.");
+      }
+    }
+
+    renderCart(cartData);
   </script>
+  <script async src="https://maps.googleapis.com/maps/api/js?callback=Function.prototype"></script>
 </body>
 </html>
